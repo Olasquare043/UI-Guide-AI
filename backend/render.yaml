@@ -1,10 +1,8 @@
 services:
   - type: web
     name: ui-guide-api
-    env: python
-    region: oregon
+    runtime: python
     plan: free
-    branch: main
     buildCommand: pip install -r requirements.txt && chmod +x startup.sh
     startCommand: ./startup.sh
     envVars:
@@ -12,7 +10,5 @@ services:
         sync: false
       - key: CHROMA_DB_URL
         sync: false
-      - key: DOCS_DIR
-        value: ./docs
       - key: PYTHON_VERSION
         value: 3.11.0
