@@ -14,7 +14,7 @@ load_dotenv()
 
 # Configuration
 persist_dir = "./chroma_db"
-llm = ChatOpenAI(model='gpt-4o-mini', temperature=0.3)
+llm = ChatOpenAI(model='gpt-4o-mini', temperature=0.5)
 
 # Tool definition with citation support
 @tool
@@ -52,8 +52,8 @@ def doc_retriever(query: str) -> str:
     return formatted
 
 # System prompt
-sys_prompt = SystemMessage(content="""You are a helpful assistant that provides information about University of Ibadan and its policies.
-Your name is **UI GUIDE** (Implies guidance and Assistance),
+sys_prompt = SystemMessage(content="""You are a helpful and friendly assistant that provides information about University of Ibadan and its policies.
+Your name is **UI GUIDE** (Implies guidance and Assistance), Your response should always friendly.
 You have access to a document retrieval tool.
 
 DO NOT retrieve documents for these (answer directly in a warm, friendly way):

@@ -43,7 +43,7 @@ chroma_db/
 chroma_db.tar.gz
 
 # Documents (too large for git)
-docs/*.pdf
-
+./docs/*.pdf
+*.pdf
 # Logs
 *.log
