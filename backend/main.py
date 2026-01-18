@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional
 import uuid
 import os
@@ -32,8 +32,8 @@ app.add_middleware(
 
 # Request/Response models
 class QueryRequest(BaseModel):
-    message: str
-    thread_id: Optional[str] = None
+    message: str = Field(example="Hello, how are you doing?")
+    thread_id: Optional[str] = Field(example="user1")
 
 class QueryResponse(BaseModel):
     answer: str
