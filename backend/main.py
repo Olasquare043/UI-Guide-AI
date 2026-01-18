@@ -1,9 +1,18 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing import Optional
 import uuid
+import os
+from pathlib import Path
 from agent import query_agent
+
+# Check if vector store exists, if not, warn user
+persist_dir = "./chroma_db"
+if not Path(persist_dir).exists():
+    print("⚠️  WARNING: Vector store (chroma_db) not found!")
+    print("   You need to run 'python build_index.py' first")
+    print("   Or the vector store will be built on first request (if docs exist)")
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -23,9 +32,8 @@ app.add_middleware(
 
 # Request/Response models
 class QueryRequest(BaseModel):
-
-    message: str = Field(example="Hello !")
-    thread_id: Optional[str] = Field(example="user1")
+    message: str
+    thread_id: Optional[str] = None
 
 class QueryResponse(BaseModel):
     answer: str
@@ -61,13 +69,16 @@ async def chat(request: QueryRequest):
             thread_id=result["thread_id"]
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import traceback
+        error_detail = traceback.format_exc()
+        print(f"ERROR in /chat endpoint: {error_detail}")
+        raise HTTPException(status_code=500, detail=f"Error: {str(e)}")
 
 # Health check endpoint for monitoring
 @app.get("/health")
 async def health():
     return {"status": "healthy"}
 
-# if __name__ == "__main__":
-#     import uvicorn
-#     uvicorn.run(app, host="0.0.0.0", port=8000)
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
