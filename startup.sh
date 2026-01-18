@@ -33,4 +33,4 @@ echo "Starting FastAPI server..."
 echo "Current directory: $(pwd)"
 echo "Files in current directory:"
 ls -la
-python -m uvicorn main:app --host 0.0.0.0 --port $PORT git
+python -m uvicorn main:app --host 0.0.0.0 --port $PORT
