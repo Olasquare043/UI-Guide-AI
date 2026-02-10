@@ -11,7 +11,7 @@
                 isComplete
                   ? 'bg-emerald-500 text-white'
                   : isActive
-                    ? 'bg-slate-900 text-white'
+                    ? 'bg-[var(--ui-brand)] text-white'
                     : 'bg-slate-200 text-slate-600'
               }`}
             >
@@ -19,7 +19,7 @@
             </div>
             <span
               className={`text-xs font-semibold uppercase tracking-wide ${
-                isActive ? 'text-slate-900' : 'text-slate-500'
+                isActive ? 'text-[var(--ui-brand)]' : 'text-slate-500'
               }`}
             >
               {step}

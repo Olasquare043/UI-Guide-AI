@@ -173,7 +173,7 @@ const Chat = () => {
           <h2 className="text-lg font-semibold text-slate-900">Conversations</h2>
           <button
             onClick={handleNewChat}
-            className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-2 text-xs font-semibold text-white"
+            className="inline-flex items-center gap-2 rounded-full bg-[var(--ui-brand)] px-3 py-2 text-xs font-semibold text-white hover:bg-[var(--ui-brand-strong)]"
           >
             <MessageSquarePlus className="h-4 w-4" />
             New
@@ -193,7 +193,7 @@ const Chat = () => {
               }}
               className={`w-full rounded-2xl border px-4 py-3 text-left text-sm transition ${
                 currentChatId === chat.id
-                  ? 'border-slate-900 bg-slate-900 text-white'
+                  ? 'border-[var(--ui-brand)] bg-[var(--ui-brand)] text-white'
                   : 'border-slate-100 bg-white text-slate-700 hover:border-slate-200'
               }`}
             >
@@ -229,9 +229,9 @@ const Chat = () => {
                 onClick={() => setVerbosity(level)}
                 className={`rounded-full border px-3 py-1 text-xs font-semibold ${
                   preferences.verbosity === level
-                    ? 'border-slate-900 bg-slate-900 text-white'
+                    ? 'border-[var(--ui-brand)] bg-[var(--ui-brand)] text-white'
                     : 'border-slate-200 bg-white text-slate-600'
-                }`}
+              }`}
               >
                 {level}
               </button>
@@ -264,7 +264,7 @@ const Chat = () => {
               <div
                 className={`max-w-[85%] rounded-2xl border px-4 py-3 text-sm shadow-sm ${
                   message.role === 'user'
-                    ? 'border-slate-900 bg-slate-900 text-white'
+                    ? 'border-[var(--ui-brand)] bg-[var(--ui-brand)] text-white'
                     : message.isError
                       ? 'border-rose-200 bg-rose-50 text-rose-800'
                       : 'border-slate-100 bg-white text-slate-700'
@@ -346,7 +346,7 @@ const Chat = () => {
           <button
             type="submit"
             disabled={isLoading || !input.trim()}
-            className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow hover:bg-slate-800 disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-2xl bg-[var(--ui-brand)] px-4 py-3 text-sm font-semibold text-white shadow hover:bg-[var(--ui-brand-strong)] disabled:opacity-60"
           >
             <Send className="h-4 w-4" />
             Send

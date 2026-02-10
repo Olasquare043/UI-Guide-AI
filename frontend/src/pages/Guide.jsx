@@ -333,7 +333,7 @@ const Guide = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-900 px-6 py-4 text-sm font-semibold text-white shadow-lg hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-500"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[var(--ui-brand)] px-6 py-4 text-sm font-semibold text-white shadow-lg hover:bg-[var(--ui-brand-strong)] disabled:cursor-not-allowed disabled:bg-slate-500"
           >
             {isLoading ? 'Generating guidance...' : 'Generate walkthrough'}
             <Sparkles className="h-4 w-4" />

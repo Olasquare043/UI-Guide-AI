@@ -6,7 +6,7 @@ const BrandMark = ({ className = '' }) => {
 
   return (
     <div className={`flex items-center gap-3 ${className}`}>
-      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#7a120b] via-[#9a2618] to-[#e8b24c] shadow-md">
+      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-gradient-to-br from-[#0b2d5c] via-[#123a73] to-[#e8b24c] shadow-md">
         {hasError ? (
           <GraduationCap className="h-6 w-6 text-white" />
         ) : (

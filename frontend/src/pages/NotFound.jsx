@@ -10,7 +10,7 @@ const NotFound = () => (
     <div className="flex gap-3">
       <NavLink
         to="/"
-        className="rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white"
+        className="rounded-full bg-[var(--ui-brand)] px-4 py-2 text-sm font-semibold text-white hover:bg-[var(--ui-brand-strong)]"
       >
         Back home
       </NavLink>

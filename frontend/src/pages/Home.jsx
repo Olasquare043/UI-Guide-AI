@@ -22,12 +22,12 @@ const features = [
 const Home = () => {
   return (
     <div className="space-y-16">
-      <section className="relative overflow-hidden rounded-[32px] border border-white/70 bg-gradient-to-br from-white via-white to-[#fff0d6] p-8 shadow-lg lg:p-12">
-        <div className="absolute right-[-10%] top-[-15%] h-48 w-48 rounded-full bg-[#ffe5b0] opacity-60 blur-3xl" />
-        <div className="absolute bottom-[-20%] left-[10%] h-64 w-64 rounded-full bg-[#cbd5ff] opacity-50 blur-3xl" />
+      <section className="relative overflow-hidden rounded-[32px] border border-white/70 bg-gradient-to-br from-white via-[#fffaf2] to-[#eef4ff] p-8 shadow-lg lg:p-12">
+        <div className="absolute right-[-10%] top-[-15%] h-48 w-48 rounded-full bg-[#f4dfb1] opacity-60 blur-3xl" />
+        <div className="absolute bottom-[-20%] left-[10%] h-64 w-64 rounded-full bg-[#d7e3f6] opacity-50 blur-3xl" />
         <div className="relative z-10 grid gap-10 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-6">
-            <span className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white">
+            <span className="inline-flex items-center gap-2 rounded-full bg-[var(--ui-brand)] px-4 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-white">
               <Sparkles className="h-4 w-4" />
               UI Guide
             </span>
@@ -42,7 +42,7 @@ const Home = () => {
             <div className="flex flex-wrap items-center gap-4">
               <NavLink
                 to="/app"
-                className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-6 py-3 text-sm font-semibold text-white shadow-lg hover:bg-slate-800"
+                className="inline-flex items-center gap-2 rounded-full bg-[var(--ui-brand)] px-6 py-3 text-sm font-semibold text-white shadow-lg hover:bg-[var(--ui-brand-strong)]"
               >
                 Start a walkthrough
                 <ArrowRight className="h-4 w-4" />
@@ -59,7 +59,7 @@ const Home = () => {
             <div className="rounded-3xl border border-slate-100 bg-white/90 p-5 shadow-sm">
               <div className="flex items-center justify-between text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-slate-500">
                 <span>Official Identity</span>
-                <span className="rounded-full bg-[#0b2d5c] px-2 py-1 text-[0.6rem] text-white">
+                <span className="rounded-full bg-[var(--ui-brand)] px-2 py-1 text-[0.6rem] text-white">
                   University of Ibadan
                 </span>
               </div>
@@ -81,7 +81,7 @@ const Home = () => {
                 className="rounded-3xl border border-slate-100 bg-white/80 p-5 shadow-sm"
               >
                 <div className="flex items-center gap-3">
-                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f7e7c3] text-slate-800">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#f5e2b8] text-slate-800">
                     <feature.icon className="h-5 w-5" />
                   </div>
                   <div>
@@ -121,7 +121,7 @@ const Home = () => {
                 key={item.title}
                 className="flex items-start gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm"
               >
-                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white">
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--ui-brand)] text-xs font-semibold text-white">
                   {index + 1}
                 </span>
                 <div>
@@ -132,7 +132,7 @@ const Home = () => {
             ))}
           </div>
         </div>
-        <div className="rounded-[28px] border border-white/70 bg-gradient-to-br from-[#111827] via-[#1f2937] to-[#4c1d95] p-8 text-white shadow-lg">
+        <div className="rounded-[28px] border border-white/70 bg-gradient-to-br from-[#0b2d5c] via-[#123a73] to-[#0f4c81] p-8 text-white shadow-lg">
           <h3 className="text-2xl font-semibold">Designed for real-world UI journeys</h3>
           <p className="mt-3 text-sm text-slate-200">
             Whether you need to understand admissions, course registration, or faculty processes,

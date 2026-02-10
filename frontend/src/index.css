@@ -8,13 +8,13 @@
   color-scheme: light;
   --ui-ink: #0f172a;
   --ui-muted: #475569;
-  --ui-brand: #7a120b;
-  --ui-brand-strong: #5a0c07;
+  --ui-brand: #0b2d5c;
+  --ui-brand-strong: #092447;
   --ui-accent: #e8b24c;
   --ui-surface: #ffffff;
   --ui-surface-muted: #f8fafc;
   --ui-border: #e2e8f0;
-  --ui-ring: #f5b24a;
+  --ui-ring: #f0c46d;
 }
 
 * {
@@ -30,7 +30,7 @@ body {
 body {
   font-family: 'Source Sans 3', 'Segoe UI', sans-serif;
   color: var(--ui-ink);
-  background: radial-gradient(circle at top, #fff7e9 0%, #f8fafc 42%, #eef2ff 100%);
+  background: radial-gradient(circle at top, #fff8ef 0%, #f7f9fd 42%, #e8eef8 100%);
   min-height: 100vh;
 }
 
@@ -107,12 +107,12 @@ h6 {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #cbd5f5;
+  background: #c7d4ea;
   border-radius: 999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+  background: #9fb3d6;
 }
 
 .markdown p {
