@@ -1,162 +1,110 @@
-import axios from 'axios';
+﻿import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://ui-guide-api-production.up.railway.app';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const DEBUG = String(import.meta.env.VITE_DEBUG).toLowerCase() === 'true'
 
-// Create axios instance with better configuration
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 30000, // 30 seconds timeout for long responses
-});
+  timeout: 30000,
+})
 
-// Request interceptor for logging
-api.interceptors.request.use(
-  (config) => {
-    console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
-    return config;
-  },
-  (error) => {
-    console.error('API Request Error:', error);
-    return Promise.reject(error);
-  }
-);
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms))
 
-// Response interceptor for error handling
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    const errorMessage = getErrorMessage(error);
-    console.error('API Response Error:', {
-      message: errorMessage,
-      status: error.response?.status,
-      url: error.config?.url,
-    });
-    
-    // Create a user-friendly error object
-    const userError = new Error(errorMessage);
-    userError.status = error.response?.status;
-    userError.isNetworkError = !error.response;
-    userError.isTimeout = error.code === 'ECONNABORTED';
-    
-    return Promise.reject(userError);
-  }
-);
-
-// Helper function to generate user-friendly error messages
-function getErrorMessage(error) {
-  if (!error.response) {
-    if (error.code === 'ECONNABORTED') {
-      return 'Request timed out. The server is taking too long to respond.';
-    }
-    if (error.message === 'Network Error') {
-      return 'Network connection error. Please check your internet connection.';
-    }
-    return 'Unable to connect to the server. Please try again later.';
-  }
-
-  switch (error.response.status) {
-    case 400:
-      return 'Bad request. Please check your input and try again.';
-    case 401:
-      return 'Authentication required. Please refresh the page.';
-    case 403:
-      return 'Access forbidden. You do not have permission.';
-    case 404:
-      return 'Resource not found. The requested endpoint does not exist.';
-    case 429:
-      return 'Too many requests. Please wait a moment before trying again.';
-    case 500:
-      return 'Server error. Our team has been notified. Please try again later.';
-    case 502:
-    case 503:
-    case 504:
-      return 'Service temporarily unavailable. Please try again in a few moments.';
-    default:
-      return `Server returned an error (${error.response.status}). Please try again.`;
+class ApiError extends Error {
+  constructor(message, { status, traceId, details, isCanceled } = {}) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+    this.traceId = traceId
+    this.details = details
+    this.isCanceled = isCanceled
   }
 }
 
-export const sendMessage = async (message, threadId = null) => {
-  try {
-    const response = await api.post('/chat', {
-      message,
-      thread_id: threadId,
-    });
-    
-    // Validate response structure
-    if (!response.data || typeof response.data !== 'object') {
-      throw new Error('Invalid response format from server');
+const parseError = (error) => {
+  if (axios.isCancel(error) || error.name === 'CanceledError') {
+    return new ApiError('Request canceled', { isCanceled: true })
+  }
+
+  const status = error.response?.status
+  const payload = error.response?.data?.error || error.response?.data || {}
+  const message =
+    payload.message ||
+    payload.error ||
+    error.message ||
+    'Unable to reach the server. Please try again.'
+
+  return new ApiError(message, {
+    status,
+    traceId: payload.trace_id,
+    details: payload.details,
+  })
+}
+
+const shouldRetry = (error) => {
+  if (error.isCanceled) return false
+  if (!error.status) return true
+  return [502, 503, 504].includes(error.status)
+}
+
+const requestWithRetry = async (fn, { retries = 2, delay = 600 } = {}) => {
+  let attempt = 0
+  while (attempt <= retries) {
+    try {
+      return await fn()
+    } catch (error) {
+      const apiError = error instanceof ApiError ? error : parseError(error)
+      if (!shouldRetry(apiError) || attempt === retries) {
+        throw apiError
+      }
+      if (DEBUG) {
+        console.warn(`Retrying request (${attempt + 1}/${retries})`)
+      }
+      await sleep(delay * (attempt + 1))
+      attempt += 1
     }
-    
-    // Ensure required fields exist with defaults
-    const safeResponse = {
-      answer: response.data.answer || 'No response received.',
-      used_retriever: response.data.used_retriever || false,
-      thread_id: response.data.thread_id || threadId || `user_${Date.now()}`,
-      // Handle citations/sources if provided by backend
-      sources: response.data.sources || null,
-      confidence: response.data.confidence || null,
-    };
-    
-    return safeResponse;
-  } catch (error) {
-    console.error('Chat API Error:', error);
-    
-    // Re-throw with additional context
-    error.context = 'Failed to send message to AI assistant';
-    throw error;
   }
-};
+  throw new ApiError('Request failed after retries')
+}
 
-export const checkHealth = async () => {
+export const sendMessage = async ({ message, threadId, mode, context, verbosity, signal }) => {
+  const payload = {
+    message,
+    thread_id: threadId,
+    mode,
+    context,
+    verbosity,
+  }
+
+  const response = await requestWithRetry(() => api.post('/chat', payload, { signal }))
+
+  return {
+    answer: response.data.answer || 'No response received.',
+    used_retriever: response.data.used_retriever || false,
+    thread_id: response.data.thread_id || threadId || `user_${Date.now()}`,
+    sources: response.data.sources || [],
+  }
+}
+
+export const checkHealth = async ({ signal } = {}) => {
   try {
-    const response = await api.get('/health');
-    
-    // Add timestamp for health check tracking
-    const healthData = {
-      ...response.data,
-      timestamp: new Date().toISOString(),
-      frontendVersion: '2.0.0', // Increment with major changes
-    };
-    
-    return healthData;
+    const response = await api.get('/health', { signal })
+    return { ...response.data, status: response.data.status || 'healthy' }
   } catch (error) {
-    console.error('Health check failed:', error);
-    
-    // Return degraded status instead of throwing
-    return {
-      status: 'degraded',
-      message: 'Unable to reach backend server',
-      timestamp: new Date().toISOString(),
-      frontendVersion: '2.0.0',
-    };
+    throw parseError(error)
   }
-};
+}
 
-// New function for connection testing
-export const testConnection = async () => {
+export const getDocuments = async ({ signal } = {}) => {
   try {
-    const startTime = Date.now();
-    const response = await api.get('/');
-    const endTime = Date.now();
-    
-    return {
-      connected: true,
-      responseTime: endTime - startTime,
-      status: response.data.status || 'unknown',
-      version: response.data.version,
-      timestamp: new Date().toISOString(),
-    };
+    const response = await api.get('/documents', { signal })
+    return response.data
   } catch (error) {
-    return {
-      connected: false,
-      error: error.message,
-      timestamp: new Date().toISOString(),
-    };
+    throw parseError(error)
   }
-};
+}
 
-// Export the api instance for other components if needed
-export default api;
+export default api
