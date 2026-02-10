@@ -49,7 +49,7 @@ const Home = () => {
               </NavLink>
               <NavLink
                 to="/chat"
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow hover:text-slate-900"
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 shadow hover:border-[var(--ui-brand)] hover:text-[var(--ui-brand)]"
               >
                 Ask a question
               </NavLink>

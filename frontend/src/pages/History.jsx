@@ -77,14 +77,14 @@ const History = () => {
                 <div className="mt-4 flex flex-wrap gap-2">
                   <button
                     onClick={() => exportGuide(guide)}
-                    className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600"
+                    className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:border-[var(--ui-brand)] hover:text-[var(--ui-brand)]"
                   >
                     <Download className="h-3 w-3" />
                     Export
                   </button>
                   <button
                     onClick={() => renameItem(guide.id, guides, setGuides)}
-                    className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600"
+                    className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:border-[var(--ui-brand)] hover:text-[var(--ui-brand)]"
                   >
                     <Pencil className="h-3 w-3" />
                     Rename
@@ -131,14 +131,14 @@ const History = () => {
                 <div className="mt-4 flex flex-wrap gap-2">
                   <button
                     onClick={() => exportChat(chat)}
-                    className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600"
+                    className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:border-[var(--ui-brand)] hover:text-[var(--ui-brand)]"
                   >
                     <Download className="h-3 w-3" />
                     Export
                   </button>
                   <button
                     onClick={() => renameItem(chat.id, chats, setChats)}
-                    className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600"
+                    className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:border-[var(--ui-brand)] hover:text-[var(--ui-brand)]"
                   >
                     <Pencil className="h-3 w-3" />
                     Rename

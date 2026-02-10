@@ -16,7 +16,7 @@ const NotFound = () => (
       </NavLink>
       <NavLink
         to="/app"
-        className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700"
+        className="rounded-full border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-[var(--ui-brand)] hover:text-[var(--ui-brand)]"
       >
         Start walkthrough
       </NavLink>

@@ -194,7 +194,7 @@ const Chat = () => {
               className={`w-full rounded-2xl border px-4 py-3 text-left text-sm transition ${
                 currentChatId === chat.id
                   ? 'border-[var(--ui-brand)] bg-[var(--ui-brand)] text-white'
-                  : 'border-slate-100 bg-white text-slate-700 hover:border-slate-200'
+                  : 'border-slate-100 bg-white text-slate-700 hover:border-[var(--ui-brand)]'
               }`}
             >
               <div className="flex items-start justify-between gap-3">
@@ -230,8 +230,8 @@ const Chat = () => {
                 className={`rounded-full border px-3 py-1 text-xs font-semibold ${
                   preferences.verbosity === level
                     ? 'border-[var(--ui-brand)] bg-[var(--ui-brand)] text-white'
-                    : 'border-slate-200 bg-white text-slate-600'
-              }`}
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-[var(--ui-brand)] hover:text-[var(--ui-brand)]'
+                }`}
               >
                 {level}
               </button>
@@ -340,7 +340,7 @@ const Chat = () => {
             onChange={(event) => setInput(event.target.value)}
             placeholder="Ask about admissions, policies, courses, or services..."
             aria-label="Message UI Guide"
-            className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm"
+            className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm focus:border-[var(--ui-brand)]"
             disabled={isLoading}
           />
           <button

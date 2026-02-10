@@ -217,7 +217,7 @@ const Guide = () => {
           </div>
           <button
             onClick={handleReset}
-            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:text-slate-900"
+            className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:border-[var(--ui-brand)] hover:text-[var(--ui-brand)]"
           >
             <RefreshCcw className="h-4 w-4" />
             Start over
@@ -242,7 +242,7 @@ const Guide = () => {
             <select
               id="context"
               {...register('context')}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm focus:border-[var(--ui-brand)]"
             >
               <option>Admissions portal</option>
               <option>Course registration</option>
@@ -263,7 +263,7 @@ const Guide = () => {
               id="task"
               rows={4}
               {...register('task')}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm focus:border-[var(--ui-brand)]"
               placeholder="Example: Guide a first-year student through course registration and fee confirmation."
             />
           </FormField>
@@ -277,7 +277,7 @@ const Guide = () => {
               id="uiDescription"
               rows={3}
               {...register('uiDescription')}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm focus:border-[var(--ui-brand)]"
               placeholder="Example: The portal shows course list, payment button, and a confirmation modal."
             />
           </FormField>
@@ -291,7 +291,7 @@ const Guide = () => {
               type="file"
               accept=".txt,.md"
               onChange={handleFileUpload}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 focus:border-[var(--ui-brand)]"
             />
             <p className="text-xs text-slate-500">We only read the file locally and append it.</p>
           </div>
@@ -305,7 +305,7 @@ const Guide = () => {
               id="constraints"
               rows={3}
               {...register('constraints')}
-              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm"
+              className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm focus:border-[var(--ui-brand)]"
               placeholder="Example: Must complete within two days of registration opening."
             />
           </FormField>
@@ -316,13 +316,13 @@ const Guide = () => {
               {['concise', 'normal', 'detailed'].map((level) => (
                 <label
                   key={level}
-                  className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700"
+                  className="flex cursor-pointer items-center gap-2 rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:border-[var(--ui-brand)] hover:text-[var(--ui-brand)]"
                 >
                   <input
                     type="radio"
                     value={level}
                     {...register('verbosity')}
-                    className="h-3 w-3 text-slate-900"
+                    className="h-3 w-3 text-[var(--ui-brand)]"
                   />
                   {level}
                 </label>
@@ -348,7 +348,7 @@ const Guide = () => {
                 type="button"
                 onClick={handleExport}
                 disabled={!result}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:border-[var(--ui-brand)] hover:text-[var(--ui-brand)] disabled:opacity-50"
               >
                 <Download className="h-4 w-4" />
                 Export
@@ -357,7 +357,7 @@ const Guide = () => {
                 type="button"
                 onClick={() => handleCopy(result?.response || '', 'Guidance')}
                 disabled={!result}
-                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:border-[var(--ui-brand)] hover:text-[var(--ui-brand)] disabled:opacity-50"
               >
                 <Copy className="h-4 w-4" />
                 Copy
@@ -409,7 +409,7 @@ const Guide = () => {
                         <button
                           type="button"
                           onClick={() => handleCopy(step.text, 'Step')}
-                          className="rounded-full border border-slate-200 p-2 text-slate-500 hover:text-slate-800"
+                          className="rounded-full border border-slate-200 p-2 text-slate-500 hover:border-[var(--ui-brand)] hover:text-[var(--ui-brand)]"
                           aria-label="Copy step"
                         >
                           <Copy className="h-4 w-4" />
@@ -492,7 +492,7 @@ const Guide = () => {
                               [index]: !prev[index],
                             }))
                           }
-                          className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-500"
+                          className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-500 hover:border-[var(--ui-brand)] hover:text-[var(--ui-brand)]"
                         >
                           Report issue
                         </button>
@@ -510,7 +510,7 @@ const Guide = () => {
                               }))
                             }
                             placeholder="Describe the issue with this step."
-                            className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-600"
+                            className="w-full rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-600 focus:border-[var(--ui-brand)]"
                           />
                           <button
                             type="button"
@@ -522,7 +522,7 @@ const Guide = () => {
                               })
                               setReporting((prev) => ({ ...prev, [index]: false }))
                             }}
-                            className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600"
+                            className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:border-[var(--ui-brand)] hover:text-[var(--ui-brand)]"
                           >
                             Submit report
                           </button>

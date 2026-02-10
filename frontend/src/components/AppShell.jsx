@@ -65,12 +65,23 @@ const AppShell = ({ children }) => {
             </NavLink>
           </div>
           <button
-            className="rounded-full border border-slate-200 bg-white p-2 text-slate-700 shadow-sm hover:text-slate-900 lg:hidden"
+            className="rounded-full border border-slate-200 bg-white p-2 text-slate-700 shadow-sm hover:border-[var(--ui-brand)] hover:text-[var(--ui-brand)] lg:hidden"
             onClick={() => setMobileOpen(true)}
             aria-label="Open navigation"
           >
             <Menu className="h-5 w-5" />
           </button>
+        </div>
+        <div className="border-t border-white/60 bg-gradient-to-r from-[#0b2d5c] via-[#123a73] to-[#0f4c81] text-white">
+          <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-2 px-4 py-2 text-[0.65rem] font-semibold uppercase tracking-[0.2em] lg:px-8">
+            <img
+              src="/ui-logo.webp"
+              alt="University of Ibadan crest"
+              className="h-6 w-auto object-contain"
+            />
+            <span>University of Ibadan</span>
+            <span className="hidden text-white/80 sm:inline">Official guidance assistant</span>
+          </div>
         </div>
       </header>
 
@@ -85,7 +96,7 @@ const AppShell = ({ children }) => {
             <div className="flex items-center justify-between">
               <BrandMark />
               <button
-                className="rounded-full border border-slate-200 p-2"
+                className="rounded-full border border-slate-200 p-2 hover:border-[var(--ui-brand)] hover:text-[var(--ui-brand)]"
                 onClick={() => setMobileOpen(false)}
                 aria-label="Close navigation"
               >
