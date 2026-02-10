@@ -56,6 +56,25 @@ const Home = () => {
             </div>
           </div>
           <div className="grid gap-4">
+            <div className="rounded-3xl border border-slate-100 bg-white/90 p-5 shadow-sm">
+              <div className="flex items-center justify-between text-[0.65rem] font-semibold uppercase tracking-[0.2em] text-slate-500">
+                <span>Official Identity</span>
+                <span className="rounded-full bg-[#0b2d5c] px-2 py-1 text-[0.6rem] text-white">
+                  University of Ibadan
+                </span>
+              </div>
+              <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-slate-50">
+                <img
+                  src="/ui-logo.jpeg"
+                  alt="University of Ibadan logo"
+                  className="h-32 w-full object-cover sm:h-36"
+                  loading="eager"
+                />
+              </div>
+              <p className="mt-3 text-xs text-slate-600">
+                UI Guide is built exclusively for University of Ibadan policies and student support.
+              </p>
+            </div>
             {features.map((feature) => (
               <div
                 key={feature.title}
