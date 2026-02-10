@@ -47,3 +47,7 @@ chroma_db.tar.gz
 *.pdf
 # Logs
 *.log
+# Node
+node_modules/
+frontend/dist/
+frontend/.vite/
