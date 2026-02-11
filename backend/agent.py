@@ -1,6 +1,7 @@
-﻿import contextvars
+import contextvars
 import logging
 from functools import lru_cache
+from pathlib import Path
 from typing import Any, Dict, List, Literal
 
 from langchain_chroma import Chroma
@@ -18,7 +19,7 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-persist_dir = "./chroma_db"
+persist_dir = str(Path(__file__).resolve().parent / "chroma_db")
 _sources_var: contextvars.ContextVar[List[Dict[str, Any]]] = contextvars.ContextVar(
     "sources",
     default=[],
@@ -56,21 +57,47 @@ def _get_sources() -> List[Dict[str, Any]]:
     return list(_sources_var.get())
 
 
+def _retrieve_documents(query: str):
+    embedding = get_embeddings()
+    vectorstore = Chroma(
+        collection_name="UI_Policies",
+        persist_directory=persist_dir,
+        embedding_function=embedding,
+    )
+    retriever = vectorstore.as_retriever(
+        search_type="mmr",
+        search_kwargs={"k": 4, "fetch_k": 20, "lambda_mult": 0.5},
+    )
+    return retriever.invoke(query)
+
+
+def _collect_sources(query: str) -> List[Dict[str, Any]]:
+    try:
+        response = _retrieve_documents(query)
+    except Exception as exc:
+        logger.exception("Document retrieval failed")
+        return []
+
+    if not response:
+        return []
+
+    return [
+        {
+            "content": doc.page_content[:300],
+            "document": doc.metadata.get("document_name", "Unknown"),
+            "page": doc.metadata.get("page_no", "Unknown"),
+            "date": doc.metadata.get("date", ""),
+            "source": doc.metadata.get("source", ""),
+        }
+        for doc in response
+    ]
+
+
 @tool
 def doc_retriever(query: str) -> str:
     """Search knowledge base for relevant documents."""
     try:
-        embedding = get_embeddings()
-        vectorstore = Chroma(
-            collection_name="UI_Policies",
-            persist_directory=persist_dir,
-            embedding_function=embedding,
-        )
-        retriever = vectorstore.as_retriever(
-            search_type="mmr",
-            search_kwargs={"k": 4, "fetch_k": 20, "lambda_mult": 0.5},
-        )
-        response = retriever.invoke(query)
+        response = _retrieve_documents(query)
     except Exception as exc:
         logger.exception("Document retrieval failed")
         return f"Knowledge base unavailable: {exc}"
@@ -179,11 +206,15 @@ def query_agent(user_input: str, thread_id: str = "default_session") -> Dict[str
             elif isinstance(message, AIMessage) and not message.tool_calls and message.content:
                 final_answer = message.content
 
+        sources = _get_sources() if used_retriever else []
+        if used_retriever and not sources:
+            sources = _collect_sources(user_input)
+
         return {
             "answer": final_answer or "No response generated",
             "used_retriever": used_retriever,
             "thread_id": thread_id,
-            "sources": _get_sources() if used_retriever else [],
+            "sources": sources,
         }
     finally:
         _sources_var.reset(token)
