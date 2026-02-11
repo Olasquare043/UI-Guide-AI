@@ -1,12 +1,15 @@
-﻿import os
+import os
 from functools import lru_cache
+from pathlib import Path
 from typing import List
 
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
-# Load local .env if present
-load_dotenv()
+# Load local .env if present (prefer backend/.env, then repo root)
+_base_dir = Path(__file__).resolve().parent
+load_dotenv(_base_dir / ".env", override=False)
+load_dotenv(_base_dir.parent / ".env", override=False)
 
 
 class Settings(BaseModel):
