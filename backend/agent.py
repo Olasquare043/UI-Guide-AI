@@ -85,7 +85,7 @@ def _collect_sources(query: str, limit: int = 2) -> List[Dict[str, Any]]:
         {
             "content": doc.page_content[:300],
             "document": doc.metadata.get("document_name", "Unknown"),
-            "page": doc.metadata.get("page_no", "Unknown"),
+            "page": str(doc.metadata.get("page_no", "Unknown")),
             "date": doc.metadata.get("date", ""),
             "source": doc.metadata.get("source", ""),
         }
@@ -111,7 +111,7 @@ def doc_retriever(query: str) -> str:
             {
                 "content": doc.page_content[:300],
                 "document": doc.metadata.get("document_name", "Unknown"),
-                "page": doc.metadata.get("page_no", "Unknown"),
+                "page": str(doc.metadata.get("page_no", "Unknown")),
                 "date": doc.metadata.get("date", ""),
                 "source": doc.metadata.get("source", ""),
             }
