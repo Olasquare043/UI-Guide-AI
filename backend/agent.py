@@ -20,6 +20,10 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 persist_dir = str(Path(__file__).resolve().parent / "chroma_db")
+MAX_CONTEXT_CHARS = 1200
+MAX_HISTORY_MESSAGES = 6
+RETRIEVAL_K = 3
+RETRIEVAL_FETCH_K = 12
 _sources_var: contextvars.ContextVar[List[Dict[str, Any]]] = contextvars.ContextVar(
     "sources",
     default=[],
@@ -35,7 +39,7 @@ def _require_api_key() -> None:
 @lru_cache(maxsize=1)
 def get_llm() -> ChatOpenAI:
     _require_api_key()
-    return ChatOpenAI(model="gpt-4o-mini", temperature=0.5)
+    return ChatOpenAI(model="gpt-4o-mini", temperature=0.4, max_tokens=700)
 
 
 def get_embeddings() -> OpenAIEmbeddings:
@@ -66,7 +70,7 @@ def _retrieve_documents(query: str):
     )
     retriever = vectorstore.as_retriever(
         search_type="mmr",
-        search_kwargs={"k": 4, "fetch_k": 20, "lambda_mult": 0.5},
+        search_kwargs={"k": RETRIEVAL_K, "fetch_k": RETRIEVAL_FETCH_K, "lambda_mult": 0.5},
     )
     return retriever.invoke(query)
 
@@ -120,7 +124,7 @@ def doc_retriever(query: str) -> str:
     formatted = "\n\n---\n\n".join(
         (
             f"[Source {i + 1}] Document: {doc.metadata.get('document_name', 'Unknown')} "
-            f"(Page {doc.metadata.get('page_no', '?')})\n\nContent:\n{doc.page_content}"
+            f"(Page {doc.metadata.get('page_no', '?')})\n\nContent:\n{doc.page_content[:MAX_CONTEXT_CHARS]}"
         )
         for i, doc in enumerate(response)
     )
@@ -159,7 +163,8 @@ sys_prompt = SystemMessage(
 def assistant(state: MessagesState):
     tools = [doc_retriever]
     llm_with_tool = get_llm().bind_tools(tools)
-    msg = [sys_prompt] + state["messages"]
+    recent_messages = state["messages"][-MAX_HISTORY_MESSAGES:]
+    msg = [sys_prompt] + recent_messages
     response = llm_with_tool.invoke(msg)
     return {"messages": [response]}
 
