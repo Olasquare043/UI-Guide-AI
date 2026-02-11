@@ -240,7 +240,7 @@ const Chat = () => {
         </div>
       </aside>
 
-      <section className="flex min-h-[70vh] flex-col rounded-[28px] border border-white/70 bg-white/80 p-6 shadow-sm">
+      <section className="flex h-[70vh] flex-col overflow-hidden rounded-[28px] border border-white/70 bg-white/80 p-6 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-slate-900">Ask UI Guide</h2>
@@ -255,7 +255,7 @@ const Chat = () => {
           )}
         </div>
 
-        <div className="mt-6 flex-1 space-y-4 overflow-y-auto pr-2">
+        <div className="mt-6 flex-1 space-y-4 overflow-y-auto pr-2 min-h-0">
           {currentChat?.messages.map((message, index) => (
             <div
               key={`${message.role}-${index}`}
