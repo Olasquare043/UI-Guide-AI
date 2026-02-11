@@ -56,7 +56,7 @@ Use these as starters and replace placeholders with actual document references o
 | Q-002 | Admissions | Process | Walk me through the steps to submit an undergraduate application. | Admissions policy | Step-by-step with citations |
 | Q-003 | Admissions | Factual | Are there admission requirements for transfer students? | Admissions policy | Cite sources or state not in docs |
 | Q-004 | Admissions | Factual | What documents are required for postgraduate admission? | Admissions policy | Cite sources |
-| Q-005 | Admissions | Process | How do I check my admission status on the portal? | Admissions portal guide | Step-by-step with citations |
+| Q-005 | Admissions | Process | ![1770795835956](image/EVALUATION/1770795835956.png) | Admissions portal guide | Step-by-step with citations |
 | Q-006 | Admissions | Factual | What is the deadline for admission applications? | Admissions policy | Cite sources or say not found |
 | Q-007 | Course registration | Process | How do I register for my courses each semester? | Registration guide | Step-by-step with citations |
 | Q-008 | Course registration | Factual | What is the maximum credit load for a semester? | Academic policy | Cite sources |
