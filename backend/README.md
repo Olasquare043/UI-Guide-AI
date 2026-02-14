@@ -24,6 +24,9 @@ Notes:
 - `EMBEDDINGS_PROVIDER` can be `auto`, `openai`, or `local`.
 - `EMBEDDINGS_MODEL` sets the local sentence-transformers model.
 - `OPENAI_API_KEY` is still required for OpenAI embeddings.
+- `INDEX_OCR_ENABLED=true` enables OCR fallback on pages with empty extracted text.
+- `INDEX_CHUNK_SIZE`, `INDEX_CHUNK_OVERLAP`, and `INDEX_BATCH_SIZE` control indexing speed vs recall.
+- OCR requires Tesseract installed on the machine.
 
 3. Build the vector store:
 

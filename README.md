@@ -26,7 +26,8 @@ UI-Guide-AI/
 
 - Python 3.11+
 - Node.js 18+
-- OpenAI API key
+- OpenAI API key or Groq API key
+- Optional for OCR fallback: Tesseract OCR installed on host
 
 ### Backend
 
@@ -97,6 +98,14 @@ Backend (`backend/.env.example`):
 - `LLM_PROVIDER` (auto | groq | openai)
 - `EMBEDDINGS_PROVIDER` (auto | openai | local)
 - `EMBEDDINGS_MODEL` (for local embeddings)
+- `INDEX_CHUNK_SIZE`
+- `INDEX_CHUNK_OVERLAP`
+- `INDEX_BATCH_SIZE`
+- `INDEX_MIN_CHARS`
+- `INDEX_MAX_MB`
+- `INDEX_OCR_ENABLED` (true | false)
+- `INDEX_OCR_LANG`
+- `INDEX_OCR_DPI`
 - `DOCS_DIR`
 - `ALLOWED_ORIGINS`
 - `DEBUG`
@@ -152,6 +161,13 @@ python build_index.py
 ```
 
 3. Restart the backend.
+
+### Indexing performance notes
+
+- `build_index.py` now uses direct PyMuPDF extraction with optional OCR fallback on empty pages.
+- Empty and very short pages are skipped by default to reduce noisy chunks and speed up embedding.
+- For faster indexing, increase `INDEX_CHUNK_SIZE` slightly and lower `INDEX_CHUNK_OVERLAP`.
+- OCR is quality-first and slower; keep `INDEX_OCR_ENABLED=false` unless your PDFs are scanned/image-heavy.
 
 ## Docs
 
