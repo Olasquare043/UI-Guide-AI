@@ -77,7 +77,7 @@ def _retrieve_documents(query: str):
     return retriever.invoke(query)
 
 
-def _collect_sources(query: str, limit: int = 2) -> List[Dict[str, Any]]:
+def _collect_sources(query: str, limit: int = 5) -> List[Dict[str, Any]]:
     try:
         response = _retrieve_documents(query)
     except Exception as exc:
@@ -216,7 +216,7 @@ def query_agent(user_input: str, thread_id: str = "default_session") -> Dict[str
         sources = _get_sources() if used_retriever else []
         if used_retriever and not sources:
             sources = _collect_sources(user_input)
-        sources = sources[:2] if used_retriever else []
+        sources = sources[:5] if used_retriever else []
 
         return {
             "answer": final_answer or "No response generated",
