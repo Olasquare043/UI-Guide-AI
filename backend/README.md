@@ -64,7 +64,7 @@ python -m pip install -r requirements.railway.txt
 3. Start command:
 
 ```
-python download_db.py && python -m uvicorn main:app --host 0.0.0.0 --port $PORT
+python start.py
 ```
 
 4. Environment:
@@ -74,3 +74,5 @@ python download_db.py && python -m uvicorn main:app --host 0.0.0.0 --port $PORT
 - `ANONYMIZED_TELEMETRY=false`
 
 5. Add a persistent volume and mount it at `/app/chroma_db`.
+6. `start.py` will install runtime deps from `requirements.railway.txt` if modules like
+   `uvicorn` are missing in the container image.

@@ -157,12 +157,13 @@ python -m pip install -r requirements.railway.txt
 - Start command:
 
 ```
-python download_db.py && python -m uvicorn main:app --host 0.0.0.0 --port $PORT
+python start.py
 ```
 
 - Add a persistent volume mounted at `/app/chroma_db`.
 - Set `CHROMA_DB_URL` to your `chroma_db.tar.gz` GitHub release asset URL.
 - Configure `LLM_PROVIDER=auto` and `EMBEDDINGS_PROVIDER=auto` to allow fallback to Groq + local embeddings when OpenAI is not available.
+- `start.py` self-heals missing runtime deps (like `uvicorn`) before booting.
 
 ## Updating the Knowledge Base
 
