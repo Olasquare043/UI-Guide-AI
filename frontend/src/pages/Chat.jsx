@@ -19,6 +19,7 @@ const Chat = () => {
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef(null)
+  const messagesContainerRef = useRef(null)
   const abortRef = useRef(null)
 
   const currentChat = useMemo(
@@ -27,7 +28,9 @@ const Chat = () => {
   )
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    const container = messagesContainerRef.current
+    if (!container) return
+    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' })
   }
 
   const handleNewChat = useCallback(() => {
@@ -168,7 +171,7 @@ const Chat = () => {
 
   return (
     <div className="grid gap-6 lg:grid-cols-[0.35fr_0.65fr]">
-      <aside className="rounded-[28px] border border-white/70 bg-white/80 p-6 shadow-sm">
+      <aside className="flex h-[72vh] flex-col overflow-hidden rounded-[28px] border border-white/70 bg-white/80 p-6 shadow-sm lg:h-[78vh]">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-slate-900">Conversations</h2>
           <button
@@ -179,7 +182,7 @@ const Chat = () => {
             New
           </button>
         </div>
-        <div className="mt-4 space-y-3">
+        <div className="mt-4 min-h-0 flex-1 space-y-3 overflow-y-auto pr-2">
           {chats.map((chat) => (
             <div
               key={chat.id}
@@ -219,7 +222,7 @@ const Chat = () => {
             </div>
           ))}
         </div>
-        <div className="mt-6 rounded-2xl border border-slate-100 bg-slate-50 p-4 text-xs text-slate-600">
+        <div className="mt-auto rounded-2xl border border-slate-100 bg-slate-50 p-4 text-xs text-slate-600">
           <p className="font-semibold text-slate-800">Response style</p>
           <div className="mt-3 flex flex-wrap gap-2">
             {['concise', 'normal', 'detailed'].map((level) => (
@@ -240,7 +243,7 @@ const Chat = () => {
         </div>
       </aside>
 
-      <section className="flex h-[70vh] flex-col overflow-hidden rounded-[28px] border border-white/70 bg-white/80 p-6 shadow-sm">
+      <section className="flex h-[72vh] flex-col overflow-hidden rounded-[28px] border border-white/70 bg-white/80 p-6 shadow-sm lg:h-[78vh]">
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-lg font-semibold text-slate-900">Ask UI Guide</h2>
@@ -255,7 +258,10 @@ const Chat = () => {
           )}
         </div>
 
-        <div className="mt-6 flex-1 space-y-4 overflow-y-auto pr-2 min-h-0">
+        <div
+          ref={messagesContainerRef}
+          className="mt-6 flex-1 space-y-4 overflow-y-auto pr-2 min-h-0"
+        >
           {currentChat?.messages.map((message, index) => (
             <div
               key={`${message.role}-${index}`}
@@ -293,11 +299,11 @@ const Chat = () => {
                 )}
 
                 {message.role === 'assistant' && message.sources?.length > 0 && (
-                  <div className="mt-3 rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-600">
-                    <p className="flex items-center gap-2 font-semibold text-slate-700">
+                  <details className="mt-3 rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-600">
+                    <summary className="flex cursor-pointer items-center gap-2 font-semibold text-slate-700">
                       <BookOpen className="h-3 w-3" />
-                      Sources
-                    </p>
+                      Sources ({message.sources.length})
+                    </summary>
                     <ul className="mt-2 space-y-1">
                       {message.sources.map((source, sourceIndex) => (
                         <li key={`${source.document}-${sourceIndex}`}>
@@ -305,7 +311,7 @@ const Chat = () => {
                         </li>
                       ))}
                     </ul>
-                  </div>
+                  </details>
                 )}
 
                 {message.role === 'assistant' && !message.isError && (
