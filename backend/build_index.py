@@ -4,7 +4,11 @@ from pathlib import Path
 from time import perf_counter
 
 import fitz
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+except ImportError:  # pragma: no cover - optional in some deploy environments
+    def load_dotenv(*_args, **_kwargs):
+        return False
 from langchain_chroma import Chroma
 try:
     from langchain_community.embeddings import HuggingFaceEmbeddings

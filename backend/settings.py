@@ -3,7 +3,11 @@ from functools import lru_cache
 from pathlib import Path
 from typing import List
 
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+except ImportError:  # pragma: no cover - optional in managed runtimes
+    def load_dotenv(*_args, **_kwargs):
+        return False
 from pydantic import BaseModel
 
 # Load local .env if present (prefer backend/.env, then repo root)

@@ -3,7 +3,11 @@ import tarfile
 import urllib.request
 from pathlib import Path
 
-from dotenv import load_dotenv
+try:
+    from dotenv import load_dotenv
+except ImportError:  # pragma: no cover - optional in container envs
+    def load_dotenv(*_args, **_kwargs):
+        return False
 
 # Load local .env if present (prefer backend/.env, then repo root)
 _base_dir = Path(__file__).resolve().parent
