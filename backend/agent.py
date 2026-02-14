@@ -8,6 +8,10 @@ from langchain_chroma import Chroma
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+try:
+    from langchain_community.embeddings import HuggingFaceEmbeddings
+except ImportError:  # pragma: no cover - optional dependency
+    HuggingFaceEmbeddings = None
 
 try:
     from langchain_groq import ChatGroq
@@ -37,7 +41,19 @@ def _select_llm_provider() -> str:
     settings = get_settings()
     provider = (settings.llm_provider or "auto").lower()
     if provider == "auto":
-        return "groq" if settings.groq_api_key else "openai"
+        if settings.openai_api_key:
+            return "openai"
+        if settings.groq_api_key:
+            return "groq"
+        return "openai"
+    return provider
+
+
+def _select_embeddings_provider() -> str:
+    settings = get_settings()
+    provider = (settings.embeddings_provider or "auto").lower()
+    if provider == "auto":
+        return "openai" if settings.openai_api_key else "local"
     return provider
 
 
@@ -49,9 +65,9 @@ def _require_llm_key(provider: str) -> None:
         raise RuntimeError("OPENAI_API_KEY is not configured")
 
 
-def _require_embeddings_key() -> None:
+def _require_embeddings_key(provider: str) -> None:
     settings = get_settings()
-    if not settings.openai_api_key:
+    if provider == "openai" and not settings.openai_api_key:
         raise RuntimeError("OPENAI_API_KEY is required for embeddings")
 
 
@@ -72,8 +88,20 @@ def get_llm() -> ChatOpenAI:
     return ChatOpenAI(model="gpt-4o-mini", temperature=0.5)
 
 
-def get_embeddings() -> OpenAIEmbeddings:
-    _require_embeddings_key()
+@lru_cache(maxsize=1)
+def get_embeddings():
+    settings = get_settings()
+    provider = _select_embeddings_provider()
+    _require_embeddings_key(provider)
+
+    if provider == "local":
+        if HuggingFaceEmbeddings is None:
+            raise RuntimeError("sentence-transformers is not installed")
+        return HuggingFaceEmbeddings(model_name=settings.embeddings_model)
+
+    if provider != "openai":
+        raise RuntimeError(f"Unsupported embeddings provider: {provider}")
+
     return OpenAIEmbeddings(model="text-embedding-3-small")
 
 

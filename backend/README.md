@@ -21,7 +21,9 @@ Notes:
 
 - Set `GROQ_API_KEY` (and optionally `GROQ_MODEL`) to use Groq for chat.
 - `LLM_PROVIDER` can be `auto`, `groq`, or `openai`.
-- `OPENAI_API_KEY` is still required for embeddings unless you change the embeddings provider.
+- `EMBEDDINGS_PROVIDER` can be `auto`, `openai`, or `local`.
+- `EMBEDDINGS_MODEL` sets the local sentence-transformers model.
+- `OPENAI_API_KEY` is still required for OpenAI embeddings.
 
 3. Build the vector store:
 

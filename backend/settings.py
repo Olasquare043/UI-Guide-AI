@@ -17,6 +17,8 @@ class Settings(BaseModel):
     groq_api_key: str = ""
     groq_model: str = "llama-3.3-70b-versatile"
     llm_provider: str = "auto"
+    embeddings_provider: str = "auto"
+    embeddings_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     docs_dir: str = "./docs"
     allowed_origins: str = "http://localhost:5173"
     debug: bool = False
@@ -37,6 +39,10 @@ def get_settings() -> Settings:
         groq_api_key=os.getenv("GROQ_API_KEY", ""),
         groq_model=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
         llm_provider=os.getenv("LLM_PROVIDER", "auto").lower(),
+        embeddings_provider=os.getenv("EMBEDDINGS_PROVIDER", "auto").lower(),
+        embeddings_model=os.getenv(
+            "EMBEDDINGS_MODEL", "sentence-transformers/all-MiniLM-L6-v2"
+        ),
         docs_dir=os.getenv("DOCS_DIR", "./docs"),
         allowed_origins=os.getenv("ALLOWED_ORIGINS", "http://localhost:5173"),
         debug=os.getenv("DEBUG", "false").lower() in {"1", "true", "yes"},

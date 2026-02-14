@@ -5,8 +5,17 @@ from pathlib import Path
 from dotenv import load_dotenv
 from langchain_chroma import Chroma
 from langchain_community.document_loaders import PyMuPDFLoader
+try:
+    from langchain_community.embeddings import HuggingFaceEmbeddings
+except ImportError:  # pragma: no cover - optional dependency
+    HuggingFaceEmbeddings = None
 from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+
+try:
+    from .settings import get_settings
+except ImportError:
+    from settings import get_settings
 
 # Load environment variables
 load_dotenv()
@@ -130,7 +139,24 @@ def build_vector_store():
     print("\nðŸ”„ Creating embeddings and vector store...")
     print("   (This may take a few minutes depending on the number of chunks)")
 
-    embed = OpenAIEmbeddings(model="text-embedding-3-small")
+    settings = get_settings()
+    provider = (settings.embeddings_provider or "auto").lower()
+    if provider == "auto":
+        provider = "openai" if settings.openai_api_key else "local"
+
+    if provider == "openai":
+        if not settings.openai_api_key:
+            print("❌ Error: OPENAI_API_KEY is required for embeddings")
+            return
+        embed = OpenAIEmbeddings(model="text-embedding-3-small")
+    elif provider == "local":
+        if HuggingFaceEmbeddings is None:
+            print("❌ Error: sentence-transformers is not installed")
+            return
+        embed = HuggingFaceEmbeddings(model_name=settings.embeddings_model)
+    else:
+        print(f"❌ Error: Unsupported embeddings provider: {provider}")
+        return
     vectorstore = Chroma(
         collection_name="UI_Policies",
         embedding_function=embed,

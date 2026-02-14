@@ -8,7 +8,7 @@ UI Guide is a retrieval-augmented assistant that helps students, staff, and pros
 - Backend: FastAPI + LangGraph + LangChain
 - Vector store: ChromaDB
 - LLM: OpenAI or Groq
-- Embeddings: OpenAI
+- Embeddings: OpenAI (or local sentence-transformers fallback)
 
 ## Project Structure
 
@@ -95,6 +95,8 @@ Backend (`backend/.env.example`):
 - `GROQ_API_KEY`
 - `GROQ_MODEL`
 - `LLM_PROVIDER` (auto | groq | openai)
+- `EMBEDDINGS_PROVIDER` (auto | openai | local)
+- `EMBEDDINGS_MODEL` (for local embeddings)
 - `DOCS_DIR`
 - `ALLOWED_ORIGINS`
 - `DEBUG`
@@ -125,7 +127,19 @@ Backend:
 - Build the ChromaDB index before deploying. The `chroma_db` folder is large and should be stored outside git.
 - Configure `OPENAI_API_KEY` and `ALLOWED_ORIGINS` in your hosting provider.
 - For frontend hosting (Vercel, Netlify), set `VITE_API_URL` to your API URL.
- - `OPENAI_API_KEY` is still required for embeddings unless you swap to a different embeddings provider.
+- If `OPENAI_API_KEY` is missing, the backend will use Groq for chat (if set) and local embeddings.
+- If you switch embeddings provider, rebuild the vector store.
+
+### Railway
+
+- Set `PORT` in Railway or use the default provided by Railway.
+- Start command:
+
+```
+uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+```
+
+- Configure `LLM_PROVIDER=auto` and `EMBEDDINGS_PROVIDER=auto` to allow fallback to Groq + local embeddings when OpenAI is not available.
 
 ## Updating the Knowledge Base
 
