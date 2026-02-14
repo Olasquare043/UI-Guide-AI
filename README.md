@@ -111,6 +111,7 @@ Backend (`backend/.env.example`):
 - `DOCS_DIR`
 - `ALLOWED_ORIGINS`
 - `DEBUG`
+- `ANONYMIZED_TELEMETRY` (false recommended to disable Chroma telemetry)
 
 Frontend (`frontend/.env.example`):
 
