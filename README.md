@@ -17,7 +17,7 @@ UI-Guide-AI/
 ├── backend/           # FastAPI backend
 ├── frontend/          # React frontend
 ├── EVALUATION/        # Audit and evaluation notes
-└── requirements.txt   # Backend dependencies
+└── requirements.txt   # Full backend dependencies (local dev/indexing)
 ```
 
 ## Local Setup
@@ -144,13 +144,24 @@ Backend:
 
 ### Railway
 
-- Set `PORT` in Railway or use the default provided by Railway.
+- Free plan recommendation:
+  - Use backend root directory (`backend`)
+  - Use the slim runtime deps file (`requirements.railway.txt`)
+  - Pin Python to 3.11 (set `RAILPACK_PYTHON_VERSION=3.11`)
+- Build command:
+
+```
+python -m pip install -r requirements.railway.txt
+```
+
 - Start command:
 
 ```
-uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+python download_db.py && uvicorn main:app --host 0.0.0.0 --port $PORT
 ```
 
+- Add a persistent volume mounted at `/app/chroma_db`.
+- Set `CHROMA_DB_URL` to your `chroma_db.tar.gz` GitHub release asset URL.
 - Configure `LLM_PROVIDER=auto` and `EMBEDDINGS_PROVIDER=auto` to allow fallback to Groq + local embeddings when OpenAI is not available.
 
 ## Updating the Knowledge Base

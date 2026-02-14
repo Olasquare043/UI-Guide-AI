@@ -49,3 +49,28 @@ python main.py
 - `POST /chat` main chat endpoint
 - `GET /documents` list indexed documents
 - `GET /test-vector` vector store diagnostics
+
+## Railway (Free Plan)
+
+Use this setup to avoid heavy optional packages during deploy:
+
+1. Set Railway service root directory to `backend`.
+2. Build command:
+
+```
+python -m pip install -r requirements.railway.txt
+```
+
+3. Start command:
+
+```
+python download_db.py && uvicorn main:app --host 0.0.0.0 --port $PORT
+```
+
+4. Environment:
+- `RAILPACK_PYTHON_VERSION=3.11`
+- `CHROMA_DB_URL=<github-release-direct-url>`
+- `LLM_PROVIDER` / `EMBEDDINGS_PROVIDER` / API keys
+- `ANONYMIZED_TELEMETRY=false`
+
+5. Add a persistent volume and mount it at `/app/chroma_db`.
