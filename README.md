@@ -16,7 +16,7 @@ UI Guide is a retrieval-augmented assistant that helps students, staff, and pros
 UI-Guide-AI/
 ├── backend/           # FastAPI backend
 ├── frontend/          # React frontend
-├── docs/              # Audit and decision logs
+├── EVALUATION/        # Audit and evaluation notes
 └── requirements.txt   # Backend dependencies
 ```
 
@@ -174,7 +174,7 @@ python build_index.py
 
 ## Docs
 
-- `docs/AUDIT.md` - audit findings and upgrade plan
-- `docs/DECISIONS.md` - architectural decisions
-- `docs/EVALUATION.md` - LLM quality evaluation framework
-- `docs/INTERVIEW_ANSWER.md` - interview-ready evaluation response
+- `EVALUATION/AUDIT.md` - audit findings and upgrade plan
+- `EVALUATION/DECISIONS.md` - architectural decisions
+- `EVALUATION/EVALUATION.md` - LLM quality evaluation framework
+- `EVALUATION/INTERVIEW_ANSWER.md` - interview-ready evaluation response
