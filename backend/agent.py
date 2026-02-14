@@ -20,10 +20,8 @@ except ImportError:
 logger = logging.getLogger(__name__)
 
 persist_dir = str(Path(__file__).resolve().parent / "chroma_db")
-MAX_CONTEXT_CHARS = 1200
-MAX_HISTORY_MESSAGES = 6
-RETRIEVAL_K = 3
-RETRIEVAL_FETCH_K = 12
+RETRIEVAL_K = 4
+RETRIEVAL_FETCH_K = 20
 _sources_var: contextvars.ContextVar[List[Dict[str, Any]]] = contextvars.ContextVar(
     "sources",
     default=[],
@@ -39,12 +37,22 @@ def _require_api_key() -> None:
 @lru_cache(maxsize=1)
 def get_llm() -> ChatOpenAI:
     _require_api_key()
-    return ChatOpenAI(model="gpt-4o-mini", temperature=0.4, max_tokens=700)
+    return ChatOpenAI(model="gpt-4o-mini", temperature=0.5)
 
 
 def get_embeddings() -> OpenAIEmbeddings:
     _require_api_key()
     return OpenAIEmbeddings(model="text-embedding-3-small")
+
+
+@lru_cache(maxsize=1)
+def get_vectorstore() -> Chroma:
+    embedding = get_embeddings()
+    return Chroma(
+        collection_name="UI_Policies",
+        persist_directory=persist_dir,
+        embedding_function=embedding,
+    )
 
 
 def _reset_sources() -> contextvars.Token:
@@ -62,13 +70,7 @@ def _get_sources() -> List[Dict[str, Any]]:
 
 
 def _retrieve_documents(query: str):
-    embedding = get_embeddings()
-    vectorstore = Chroma(
-        collection_name="UI_Policies",
-        persist_directory=persist_dir,
-        embedding_function=embedding,
-    )
-    retriever = vectorstore.as_retriever(
+    retriever = get_vectorstore().as_retriever(
         search_type="mmr",
         search_kwargs={"k": RETRIEVAL_K, "fetch_k": RETRIEVAL_FETCH_K, "lambda_mult": 0.5},
     )
@@ -124,7 +126,7 @@ def doc_retriever(query: str) -> str:
     formatted = "\n\n---\n\n".join(
         (
             f"[Source {i + 1}] Document: {doc.metadata.get('document_name', 'Unknown')} "
-            f"(Page {doc.metadata.get('page_no', '?')})\n\nContent:\n{doc.page_content[:MAX_CONTEXT_CHARS]}"
+            f"(Page {doc.metadata.get('page_no', '?')})\n\nContent:\n{doc.page_content}"
         )
         for i, doc in enumerate(response)
     )
@@ -163,8 +165,7 @@ sys_prompt = SystemMessage(
 def assistant(state: MessagesState):
     tools = [doc_retriever]
     llm_with_tool = get_llm().bind_tools(tools)
-    recent_messages = state["messages"][-MAX_HISTORY_MESSAGES:]
-    msg = [sys_prompt] + recent_messages
+    msg = [sys_prompt] + state["messages"]
     response = llm_with_tool.invoke(msg)
     return {"messages": [response]}
 
