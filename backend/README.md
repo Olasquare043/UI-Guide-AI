@@ -7,9 +7,11 @@ FastAPI service for the UI Guide assistant. Provides chat endpoints and vector s
 1. Install dependencies:
 
 ```
-pip install -r ../requirements.txt
-pip install -r requirements-dev.txt
+python -m pip install -r ../requirements.txt
+python -m pip install -r requirements-dev.txt
 ```
+
+Tip: run with your virtualenv interpreter (`.\venv\Scripts\python` on Windows) to avoid installing into user/global Python.
 
 2. Configure environment variables:
 

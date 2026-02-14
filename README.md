@@ -35,9 +35,11 @@ UI-Guide-AI/
 
 ```
 cd backend
-pip install -r ../requirements.txt
-pip install -r requirements-dev.txt
+python -m pip install -r ../requirements.txt
+python -m pip install -r requirements-dev.txt
 ```
+
+Tip: use your virtualenv interpreter (`.\venv\Scripts\python` on Windows) so installs do not go to user/global site-packages.
 
 2. Create environment file:
 
