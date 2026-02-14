@@ -64,7 +64,7 @@ python -m pip install -r requirements.railway.txt
 3. Start command:
 
 ```
-python download_db.py && uvicorn main:app --host 0.0.0.0 --port $PORT
+python download_db.py && python -m uvicorn main:app --host 0.0.0.0 --port $PORT
 ```
 
 4. Environment:

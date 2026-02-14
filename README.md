@@ -157,7 +157,7 @@ python -m pip install -r requirements.railway.txt
 - Start command:
 
 ```
-python download_db.py && uvicorn main:app --host 0.0.0.0 --port $PORT
+python download_db.py && python -m uvicorn main:app --host 0.0.0.0 --port $PORT
 ```
 
 - Add a persistent volume mounted at `/app/chroma_db`.
