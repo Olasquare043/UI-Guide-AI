@@ -9,6 +9,7 @@ langchain-community==0.3.5
 langchain-chroma==0.1.4
 langchain-text-splitters==0.3.2
 chromadb==0.5.20
+posthog==3.25.0
 pymupdf==1.24.13
 openai==1.54.3
 pydantic==2.9.2
