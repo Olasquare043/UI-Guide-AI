@@ -57,6 +57,12 @@ python main.py
 
 The API runs at `http://localhost:8000`.
 
+You can also run with Uvicorn for auto-reload:
+
+```
+uvicorn main:app --reload
+```
+
 ### Frontend
 
 1. Install dependencies:
@@ -116,7 +122,21 @@ Backend:
 - Configure `OPENAI_API_KEY` and `ALLOWED_ORIGINS` in your hosting provider.
 - For frontend hosting (Vercel, Netlify), set `VITE_API_URL` to your API URL.
 
+## Updating the Knowledge Base
+
+1. Add or replace PDFs in `backend/docs/`.
+2. Rebuild the index:
+
+```
+cd backend
+python build_index.py
+```
+
+3. Restart the backend.
+
 ## Docs
 
 - `docs/AUDIT.md` - audit findings and upgrade plan
 - `docs/DECISIONS.md` - architectural decisions
+- `docs/EVALUATION.md` - LLM quality evaluation framework
+- `docs/INTERVIEW_ANSWER.md` - interview-ready evaluation response
