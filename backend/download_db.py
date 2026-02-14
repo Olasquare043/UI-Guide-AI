@@ -6,13 +6,16 @@ from pathlib import Path
 try:
     from dotenv import load_dotenv
 except ImportError:  # pragma: no cover - optional in container envs
+
     def load_dotenv(*_args, **_kwargs):
         return False
+
 
 # Load local .env if present (prefer backend/.env, then repo root)
 _base_dir = Path(__file__).resolve().parent
 load_dotenv(_base_dir / ".env", override=False)
 load_dotenv(_base_dir.parent / ".env", override=False)
+
 
 def download_and_extract_db():
     """Download and extract the chroma database if it doesn't exist"""

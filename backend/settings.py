@@ -6,8 +6,11 @@ from typing import List
 try:
     from dotenv import load_dotenv
 except ImportError:  # pragma: no cover - optional in managed runtimes
+
     def load_dotenv(*_args, **_kwargs):
         return False
+
+
 from pydantic import BaseModel
 
 # Load local .env if present (prefer backend/.env, then repo root)
@@ -44,9 +47,7 @@ def get_settings() -> Settings:
         groq_model=os.getenv("GROQ_MODEL", "llama-3.3-70b-versatile"),
         llm_provider=os.getenv("LLM_PROVIDER", "auto").lower(),
         embeddings_provider=os.getenv("EMBEDDINGS_PROVIDER", "auto").lower(),
-        embeddings_model=os.getenv(
-            "EMBEDDINGS_MODEL", "sentence-transformers/all-MiniLM-L6-v2"
-        ),
+        embeddings_model=os.getenv("EMBEDDINGS_MODEL", "sentence-transformers/all-MiniLM-L6-v2"),
         docs_dir=os.getenv("DOCS_DIR", "./docs"),
         allowed_origins=os.getenv("ALLOWED_ORIGINS", "http://localhost:5173"),
         debug=os.getenv("DEBUG", "false").lower() in {"1", "true", "yes"},

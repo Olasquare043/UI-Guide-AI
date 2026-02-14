@@ -1,4 +1,13 @@
-﻿import { BookOpen, ChevronDown, ChevronUp, Copy, Loader2, MessageSquarePlus, Send, Trash2 } from 'lucide-react'
+import {
+  BookOpen,
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  Loader2,
+  MessageSquarePlus,
+  Send,
+  Trash2,
+} from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import MarkdownContent from '../components/MarkdownContent'
 import useToast from '../hooks/useToast'

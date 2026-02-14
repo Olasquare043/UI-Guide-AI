@@ -34,7 +34,7 @@ def package_chroma_db():
     print("\n1. Upload this file to a cloud storage service:")
     print("   - GitHub Releases (if < 2GB)")
     print("\n2. Get a direct download URL for the file")
-    print("\n3. Set CHROMA_DB_URL environment variable in Render:")
+    print("\n3. Set CHROMA_DB_URL environment variable in Railway:")
     print("   CHROMA_DB_URL=https://your-storage-url/chroma_db.tar.gz")
     print("\n" + "=" * 70 + "\n")
 

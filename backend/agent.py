@@ -8,6 +8,7 @@ from langchain_chroma import Chroma
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+
 try:
     from langchain_community.embeddings import HuggingFaceEmbeddings
 except ImportError:  # pragma: no cover - optional dependency
@@ -140,7 +141,7 @@ def _retrieve_documents(query: str):
 def _collect_sources(query: str, limit: int = 5) -> List[Dict[str, Any]]:
     try:
         response = _retrieve_documents(query)
-    except Exception as exc:
+    except Exception:
         logger.exception("Document retrieval failed")
         return []
 
