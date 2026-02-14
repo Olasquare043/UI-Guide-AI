@@ -17,6 +17,12 @@ pip install -r requirements-dev.txt
 cp .env.example .env
 ```
 
+Notes:
+
+- Set `GROQ_API_KEY` (and optionally `GROQ_MODEL`) to use Groq for chat.
+- `LLM_PROVIDER` can be `auto`, `groq`, or `openai`.
+- `OPENAI_API_KEY` is still required for embeddings unless you change the embeddings provider.
+
 3. Build the vector store:
 
 ```

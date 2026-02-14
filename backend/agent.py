@@ -8,6 +8,11 @@ from langchain_chroma import Chroma
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.tools import tool
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+
+try:
+    from langchain_groq import ChatGroq
+except ImportError:  # pragma: no cover - optional dependency
+    ChatGroq = None
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, START, MessagesState, StateGraph
 from langgraph.prebuilt import ToolNode
@@ -28,20 +33,47 @@ _sources_var: contextvars.ContextVar[List[Dict[str, Any]]] = contextvars.Context
 )
 
 
-def _require_api_key() -> None:
+def _select_llm_provider() -> str:
+    settings = get_settings()
+    provider = (settings.llm_provider or "auto").lower()
+    if provider == "auto":
+        return "groq" if settings.groq_api_key else "openai"
+    return provider
+
+
+def _require_llm_key(provider: str) -> None:
+    settings = get_settings()
+    if provider == "groq" and not settings.groq_api_key:
+        raise RuntimeError("GROQ_API_KEY is not configured")
+    if provider == "openai" and not settings.openai_api_key:
+        raise RuntimeError("OPENAI_API_KEY is not configured")
+
+
+def _require_embeddings_key() -> None:
     settings = get_settings()
     if not settings.openai_api_key:
-        raise RuntimeError("OPENAI_API_KEY is not configured")
+        raise RuntimeError("OPENAI_API_KEY is required for embeddings")
 
 
 @lru_cache(maxsize=1)
 def get_llm() -> ChatOpenAI:
-    _require_api_key()
+    settings = get_settings()
+    provider = _select_llm_provider()
+    _require_llm_key(provider)
+
+    if provider == "groq":
+        if ChatGroq is None:
+            raise RuntimeError("langchain-groq is not installed")
+        return ChatGroq(model=settings.groq_model, temperature=0.5)
+
+    if provider != "openai":
+        raise RuntimeError(f"Unsupported LLM provider: {provider}")
+
     return ChatOpenAI(model="gpt-4o-mini", temperature=0.5)
 
 
 def get_embeddings() -> OpenAIEmbeddings:
-    _require_api_key()
+    _require_embeddings_key()
     return OpenAIEmbeddings(model="text-embedding-3-small")
 
 
