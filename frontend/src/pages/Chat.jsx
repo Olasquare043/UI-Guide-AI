@@ -1,4 +1,4 @@
-﻿import { BookOpen, Copy, Loader2, MessageSquarePlus, Send, Trash2 } from 'lucide-react'
+﻿import { BookOpen, ChevronDown, ChevronUp, Copy, Loader2, MessageSquarePlus, Send, Trash2 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import MarkdownContent from '../components/MarkdownContent'
 import useToast from '../hooks/useToast'
@@ -299,10 +299,16 @@ const Chat = () => {
                 )}
 
                 {message.role === 'assistant' && message.sources?.length > 0 && (
-                  <details className="mt-3 rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-600">
-                    <summary className="flex cursor-pointer items-center gap-2 font-semibold text-slate-700">
-                      <BookOpen className="h-3 w-3" />
-                      Sources ({message.sources.length})
+                  <details className="group mt-3 rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-600">
+                    <summary className="flex cursor-pointer items-center justify-between gap-2 font-semibold text-slate-700">
+                      <span className="flex items-center gap-2">
+                        <BookOpen className="h-3 w-3" />
+                        Sources ({message.sources.length})
+                      </span>
+                      <span className="flex items-center gap-1 text-[0.65rem] font-semibold text-slate-400">
+                        <ChevronDown className="h-4 w-4 group-open:hidden" />
+                        <ChevronUp className="h-4 w-4 hidden group-open:block" />
+                      </span>
                     </summary>
                     <ul className="mt-2 space-y-1">
                       {message.sources.map((source, sourceIndex) => (
