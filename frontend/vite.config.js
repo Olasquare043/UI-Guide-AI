@@ -1,4 +1,4 @@
-﻿import { defineConfig } from 'vite'
+import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
 const VENDOR_RE = /node_modules\//
@@ -8,6 +8,16 @@ const MARKDOWN_RE = /node_modules\/(react-markdown|remark|rehype)\//
 const UI_RE = /node_modules\/(lucide-react|@headlessui)\//
 const FORMS_RE = /node_modules\/(react-hook-form|zod)\//
 const HTTP_RE = /node_modules\/axios\//
+
+const railwayHost = process.env.RAILWAY_PUBLIC_DOMAIN || process.env.RAILWAY_STATIC_URL || ''
+
+const allowedHosts = [
+  'localhost',
+  '127.0.0.1',
+  '.railway.app',
+  '.up.railway.app',
+  railwayHost,
+].filter(Boolean)
 
 const vendorChunks = (id) => {
   if (!VENDOR_RE.test(id)) return undefined
@@ -24,6 +34,12 @@ const vendorChunks = (id) => {
 
 export default defineConfig({
   plugins: [react()],
+  server: {
+    allowedHosts,
+  },
+  preview: {
+    allowedHosts,
+  },
   build: {
     rollupOptions: {
       output: {
