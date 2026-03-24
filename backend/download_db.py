@@ -11,48 +11,80 @@ except ImportError:  # pragma: no cover - optional in container envs
         return False
 
 
+try:
+    from .settings import get_settings
+except ImportError:
+    from settings import get_settings
+
+
+BASE_DIR = Path(__file__).resolve().parent
+ARCHIVE_NAME = "chroma_db.tar.gz"
+
 # Load local .env if present (prefer backend/.env, then repo root)
-_base_dir = Path(__file__).resolve().parent
-load_dotenv(_base_dir / ".env", override=False)
-load_dotenv(_base_dir.parent / ".env", override=False)
+load_dotenv(BASE_DIR / ".env", override=False)
+load_dotenv(BASE_DIR.parent / ".env", override=False)
 
 
-def download_and_extract_db():
-    """Download and extract the chroma database if it doesn't exist"""
+def _archive_path() -> Path:
+    return BASE_DIR / ARCHIVE_NAME
 
-    chroma_dir = Path("./chroma_db")
 
-    if chroma_dir.exists():
-        print("✅ Vector database already exists.")
-        return
+def _has_existing_database(chroma_dir: Path) -> bool:
+    return (chroma_dir / "chroma.sqlite3").exists()
 
-    db_url = os.getenv("CHROMA_DB_URL")
 
+def _safe_extract(tar: tarfile.TarFile, destination: Path) -> None:
+    destination = destination.resolve()
+    for member in tar.getmembers():
+        member_path = (destination / member.name).resolve()
+        if member_path != destination and destination not in member_path.parents:
+            raise RuntimeError(f"Unsafe archive member detected: {member.name}")
+    tar.extractall(destination)
+
+
+def download_and_extract_db() -> bool:
+    """Download and extract the Chroma database if it does not already exist."""
+
+    chroma_dir = get_settings().chroma_db_path()
+    if _has_existing_database(chroma_dir):
+        print(f"Vector database already exists at {chroma_dir}.")
+        return True
+
+    db_url = os.getenv("CHROMA_DB_URL", "").strip()
     if not db_url:
-        print("❌ ERROR: CHROMA_DB_URL environment variable not set!")
-        exit(1)
+        print(
+            "CHROMA_DB_URL is not set. Skipping database download. "
+            f"Expected database path: {chroma_dir}"
+        )
+        return False
 
-    print(f"📥 Downloading vector database from: {db_url}")
+    archive_path = _archive_path()
+    print(f"Downloading vector database from: {db_url}")
 
     try:
-        # Download the file
-        tar_file = "chroma_db.tar.gz"
-        urllib.request.urlretrieve(db_url, tar_file)
-        print("✅ Download complete!")
+        chroma_dir.parent.mkdir(parents=True, exist_ok=True)
+        urllib.request.urlretrieve(db_url, archive_path)
+        print("Download complete.")
 
-        # Extract the file
-        print("📦 Extracting vector database...")
-        with tarfile.open(tar_file, "r:gz") as tar:
-            tar.extractall()
+        print(f"Extracting vector database into {chroma_dir.parent}...")
+        with tarfile.open(archive_path, "r:gz") as tar:
+            _safe_extract(tar, chroma_dir.parent)
 
-        # Clean up
-        os.remove(tar_file)
-        print("✅ Vector database ready!")
+        if not _has_existing_database(chroma_dir):
+            raise RuntimeError(
+                f"Extraction completed, but no Chroma database was found at {chroma_dir}."
+            )
 
-    except Exception as e:
-        print(f"❌ Error: {e}")
-        exit(1)
+        print("Vector database ready.")
+        return True
+    finally:
+        if archive_path.exists():
+            os.remove(archive_path)
 
 
 if __name__ == "__main__":
-    download_and_extract_db()
+    try:
+        download_and_extract_db()
+    except Exception as exc:  # pragma: no cover - script entry point
+        print(f"Error: {exc}")
+        raise SystemExit(1)

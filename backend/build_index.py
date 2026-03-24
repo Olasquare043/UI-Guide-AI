@@ -1,6 +1,5 @@
 import hashlib
 import os
-from pathlib import Path
 from time import perf_counter
 
 import fitz
@@ -53,7 +52,10 @@ MIN_CHARS = int(os.getenv("INDEX_MIN_CHARS", "20"))
 OCR_ENABLED = _as_bool(os.getenv("INDEX_OCR_ENABLED", "false"))
 OCR_LANG = os.getenv("INDEX_OCR_LANG", "eng")
 OCR_DPI = int(os.getenv("INDEX_OCR_DPI", "180"))
-PERSIST_DIR = str(Path(__file__).resolve().parent / "chroma_db")
+
+
+def _persist_dir() -> str:
+    return str(get_settings().chroma_db_path())
 
 
 def _extract_text_with_optional_ocr(page):
@@ -180,7 +182,7 @@ def build_vector_store():
     print("=" * 70 + "\n")
 
     settings = get_settings()
-    doc_dir = Path(settings.docs_dir)
+    doc_dir = settings.docs_path()
     if not doc_dir.exists():
         print(f"ERROR: Directory '{doc_dir}' does not exist.")
         return
@@ -276,7 +278,7 @@ def build_vector_store():
     vectorstore = Chroma(
         collection_name="UI_Policies",
         embedding_function=embed,
-        persist_directory=PERSIST_DIR,
+        persist_directory=_persist_dir(),
     )
 
     ingest_start = perf_counter()
@@ -292,7 +294,7 @@ def build_vector_store():
     print("\nSUCCESS")
     print(f"  chunks_added={len(chunks)}")
     print(f"  vectors_in_collection={vec_count}")
-    print(f"  vector_store={PERSIST_DIR}")
+    print(f"  vector_store={_persist_dir()}")
     print(f"  ingest_time={ingest_elapsed:.1f}s")
     print("\n" + "=" * 70)
     print("Index build complete.")

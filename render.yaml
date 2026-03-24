@@ -1,0 +1,47 @@
+services:
+  - type: web
+    name: ui-guide-api
+    runtime: python
+    rootDir: backend
+    buildCommand: python -m pip install --upgrade pip && python -m pip install -r requirements.render.txt
+    startCommand: python start.py
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.11
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GROQ_MODEL
+        value: llama-3.3-70b-versatile
+      - key: LLM_PROVIDER
+        value: auto
+      - key: EMBEDDINGS_PROVIDER
+        value: auto
+      - key: ALLOWED_ORIGINS
+        value: "*"
+      - key: ANONYMIZED_TELEMETRY
+        value: "false"
+      - key: DEBUG
+        value: "false"
+
+  - type: web
+    name: ui-guide-web
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: NODE_VERSION
+        value: 22.22.0
+      - key: VITE_API_URL
+        sync: false
+      - key: VITE_APP_TITLE
+        value: UI Guide
+      - key: VITE_DEBUG
+        value: "false"
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html

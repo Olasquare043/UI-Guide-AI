@@ -30,6 +30,29 @@ def test_root_endpoint(monkeypatch):
     assert payload["vector_store"]["status"] == "connected"
 
 
+def test_root_serves_frontend_when_dist_present(monkeypatch, tmp_path):
+    dist_dir = tmp_path / "dist"
+    dist_dir.mkdir()
+    (dist_dir / "index.html").write_text("<!doctype html><html><body>UI Guide</body></html>")
+    (dist_dir / "logo.txt").write_text("logo")
+
+    monkeypatch.setenv("FRONTEND_DIST_DIR", str(dist_dir))
+    client = TestClient(main.app)
+
+    root_response = client.get("/")
+    assert root_response.status_code == 200
+    assert "text/html" in root_response.headers["content-type"]
+    assert "UI Guide" in root_response.text
+
+    asset_response = client.get("/logo.txt")
+    assert asset_response.status_code == 200
+    assert asset_response.text == "logo"
+
+    route_response = client.get("/chat")
+    assert route_response.status_code == 200
+    assert "UI Guide" in route_response.text
+
+
 def test_chat_success(monkeypatch):
     def fake_query_agent(message, thread_id):
         return {

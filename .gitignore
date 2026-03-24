@@ -2,6 +2,9 @@
 __pycache__/
 *.py[cod]
 *$py.class
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
 *.so
 .Python
 env/
@@ -41,6 +44,8 @@ Thumbs.db
 # Vector database (too large for git)
 chroma_db/
 chroma_db.tar.gz
+!backend/chroma_db/
+!backend/chroma_db/**
 
 # Documents (too large for git)
 ./docs/*.pdf

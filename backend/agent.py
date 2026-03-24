@@ -1,7 +1,6 @@
 import contextvars
 import logging
 from functools import lru_cache
-from pathlib import Path
 from typing import Any, Dict, List, Literal
 
 from langchain_chroma import Chroma
@@ -29,13 +28,16 @@ except ImportError:
 
 logger = logging.getLogger(__name__)
 
-persist_dir = str(Path(__file__).resolve().parent / "chroma_db")
 RETRIEVAL_K = 4
 RETRIEVAL_FETCH_K = 20
 _sources_var: contextvars.ContextVar[List[Dict[str, Any]]] = contextvars.ContextVar(
     "sources",
     default=[],
 )
+
+
+def _persist_dir() -> str:
+    return str(get_settings().chroma_db_path())
 
 
 def _select_llm_provider() -> str:
@@ -111,7 +113,7 @@ def get_vectorstore() -> Chroma:
     embedding = get_embeddings()
     return Chroma(
         collection_name="UI_Policies",
-        persist_directory=persist_dir,
+        persist_directory=_persist_dir(),
         embedding_function=embedding,
     )
 
@@ -294,7 +296,7 @@ def get_available_documents() -> List[str]:
         embedding = get_embeddings()
         vectorstore = Chroma(
             collection_name="UI_Policies",
-            persist_directory=persist_dir,
+            persist_directory=_persist_dir(),
             embedding_function=embedding,
         )
 
@@ -319,7 +321,7 @@ def test_vector_store() -> Dict[str, Any]:
         embedding = get_embeddings()
         vectorstore = Chroma(
             collection_name="UI_Policies",
-            persist_directory=persist_dir,
+            persist_directory=_persist_dir(),
             embedding_function=embedding,
         )
 

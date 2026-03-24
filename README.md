@@ -109,6 +109,7 @@ Backend (`backend/.env.example`):
 - `INDEX_OCR_LANG`
 - `INDEX_OCR_DPI`
 - `DOCS_DIR`
+- `CHROMA_DB_DIR`
 - `ALLOWED_ORIGINS`
 - `DEBUG`
 - `ANONYMIZED_TELEMETRY` (false recommended to disable Chroma telemetry)
@@ -136,11 +137,43 @@ Backend:
 
 ## Deployment Notes
 
-- Build the ChromaDB index before deploying. The `chroma_db` folder is large and should be stored outside git.
+- Build the ChromaDB index before deploying.
+- Prefer keeping the generated `chroma_db` on persistent storage or in a release asset. Committing it to git is only reasonable when it is genuinely small, changes rarely, and you accept repo history growth.
 - Configure `OPENAI_API_KEY` and `ALLOWED_ORIGINS` in your hosting provider.
 - For frontend hosting (Vercel, Netlify), set `VITE_API_URL` to your API URL.
 - If `OPENAI_API_KEY` is missing, the backend will use Groq for chat (if set) and local embeddings.
 - If you switch embeddings provider, rebuild the vector store.
+- `CHROMA_DB_DIR` controls where the backend reads and writes the Chroma data. Relative paths are resolved from `backend/`.
+
+### Render Blueprint (Recommended)
+
+This repo now includes `render.yaml` for the recommended Render setup:
+
+- `ui-guide-api`: Python web service rooted at `backend/`
+- `ui-guide-web`: static site rooted at `frontend/`
+- uses the bundled `backend/chroma_db` directly
+
+How to use it:
+
+1. In Render, create a new Blueprint service from this repo.
+2. Set the secret env vars Render asks for:
+   - `OPENAI_API_KEY` and/or `GROQ_API_KEY`
+   - `VITE_API_URL` for the frontend, using your backend public URL
+3. Deploy.
+
+Notes:
+
+- The blueprint defaults `ALLOWED_ORIGINS` to `*` so the frontend works immediately. Tighten this later if you want stricter CORS.
+- The backend uses `backend/requirements.render.txt` so Render can deploy from the `backend/` root directory without depending on repo-root files.
+
+### Render Docker (One Service)
+
+If you want Render to auto-detect a Docker deploy and run everything as one service, use the root `Dockerfile`.
+
+- It builds the React app, copies the compiled frontend into the final image, and starts FastAPI.
+- The backend now serves the built frontend automatically when `FRONTEND_DIST_DIR` exists, so the same container can serve both the UI and API.
+- In this mode the frontend can use same-origin API calls, so `VITE_API_URL` is optional.
+- If `backend/chroma_db` is committed, no persistent disk or `CHROMA_DB_URL` is required.
 
 ### Railway
 
@@ -160,10 +193,17 @@ python -m pip install -r requirements.railway.txt
 python start.py
 ```
 
-- Add a persistent volume mounted at `/app/chroma_db`.
-- Set `CHROMA_DB_URL` to your `chroma_db.tar.gz` GitHub release asset URL.
+- Set `CHROMA_DB_DIR` to your mounted volume path if you are not using the default `./chroma_db`.
+- Set `CHROMA_DB_URL` to your `chroma_db.tar.gz` archive URL if you want startup to seed an empty volume automatically.
 - Configure `LLM_PROVIDER=auto` and `EMBEDDINGS_PROVIDER=auto` to allow fallback to Groq + local embeddings when OpenAI is not available.
 - `start.py` self-heals missing runtime deps (like `uvicorn`) before booting.
+
+### Render
+
+- Best option for this repo: use the included `render.yaml` Blueprint and keep frontend + backend as separate Render services.
+- Best option if you insist on one deployable unit: use the root `Dockerfile`.
+- Since your ChromaDB is small and static, bundling `backend/chroma_db` in the repo is fine and means you do not need a mounted disk.
+- Tradeoff: every knowledge-base update means rebuilding the index locally and committing the updated `backend/chroma_db`.
 
 ## Updating the Knowledge Base
 

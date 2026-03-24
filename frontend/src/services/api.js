@@ -1,6 +1,10 @@
 ﻿import axios from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
+const isLocalHost =
+  typeof window !== 'undefined' &&
+  ['localhost', '127.0.0.1'].includes(window.location.hostname)
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || (isLocalHost ? 'http://localhost:8000' : '')
 const DEBUG = String(import.meta.env.VITE_DEBUG).toLowerCase() === 'true'
 
 const api = axios.create({

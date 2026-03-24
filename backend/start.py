@@ -43,7 +43,7 @@ def _ensure_runtime_dependencies() -> None:
 
 def main() -> None:
     _ensure_runtime_dependencies()
-    subprocess.check_call([sys.executable, "download_db.py"])
+    subprocess.check_call([sys.executable, str(BASE_DIR / "download_db.py")])
 
     port = os.getenv("PORT", "8000")
     os.execvp(
@@ -53,6 +53,8 @@ def main() -> None:
             "-m",
             "uvicorn",
             "main:app",
+            "--app-dir",
+            str(BASE_DIR),
             "--host",
             "0.0.0.0",
             "--port",

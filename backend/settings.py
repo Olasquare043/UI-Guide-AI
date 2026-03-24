@@ -19,6 +19,13 @@ load_dotenv(_base_dir / ".env", override=False)
 load_dotenv(_base_dir.parent / ".env", override=False)
 
 
+def _resolve_backend_path(value: str, default_relative_path: str) -> Path:
+    path = Path(value or default_relative_path)
+    if not path.is_absolute():
+        path = _base_dir / path
+    return path.resolve()
+
+
 class Settings(BaseModel):
     openai_api_key: str = ""
     groq_api_key: str = ""
@@ -27,6 +34,7 @@ class Settings(BaseModel):
     embeddings_provider: str = "auto"
     embeddings_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     docs_dir: str = "./docs"
+    chroma_db_dir: str = "./chroma_db"
     allowed_origins: str = "http://localhost:5173"
     debug: bool = False
 
@@ -37,6 +45,12 @@ class Settings(BaseModel):
         if raw == "*":
             return ["*"]
         return [origin.strip() for origin in raw.split(",") if origin.strip()]
+
+    def docs_path(self) -> Path:
+        return _resolve_backend_path(self.docs_dir, "./docs")
+
+    def chroma_db_path(self) -> Path:
+        return _resolve_backend_path(self.chroma_db_dir, "./chroma_db")
 
 
 @lru_cache(maxsize=1)
@@ -49,6 +63,7 @@ def get_settings() -> Settings:
         embeddings_provider=os.getenv("EMBEDDINGS_PROVIDER", "auto").lower(),
         embeddings_model=os.getenv("EMBEDDINGS_MODEL", "sentence-transformers/all-MiniLM-L6-v2"),
         docs_dir=os.getenv("DOCS_DIR", "./docs"),
+        chroma_db_dir=os.getenv("CHROMA_DB_DIR", "./chroma_db"),
         allowed_origins=os.getenv("ALLOWED_ORIGINS", "http://localhost:5173"),
         debug=os.getenv("DEBUG", "false").lower() in {"1", "true", "yes"},
     )

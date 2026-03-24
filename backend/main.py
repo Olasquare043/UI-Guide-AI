@@ -1,11 +1,12 @@
-﻿import logging
+import logging
+import os
 import uuid
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional
+from typing import List, Literal, Optional
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel, Field
 
 try:
@@ -39,9 +40,29 @@ except Exception as exc:
     test_vector_store = _missing_dependency_error(exc)
 
 
-persist_dir = "./chroma_db"
-if not Path(persist_dir).exists():
-    logger.warning("Vector store (chroma_db) not found. Run `python build_index.py` first.")
+def _frontend_dist_dir() -> Optional[Path]:
+    env_path = os.getenv("FRONTEND_DIST_DIR", "").strip()
+    if not env_path:
+        return None
+
+    candidate = Path(env_path)
+    if (candidate / "index.html").exists():
+        return candidate.resolve()
+    return None
+
+
+def _safe_frontend_file(dist_dir: Path, relative_path: str) -> Optional[Path]:
+    requested = (dist_dir / relative_path).resolve()
+    resolved_dist = dist_dir.resolve()
+    if requested == resolved_dist or resolved_dist in requested.parents:
+        if requested.is_file():
+            return requested
+    return None
+
+
+persist_dir = settings.chroma_db_path()
+if not persist_dir.exists():
+    logger.warning("Vector store not found at %s. Run `python build_index.py` first.", persist_dir)
 
 app = FastAPI(
     title="UI Guide API",
@@ -90,14 +111,6 @@ class QueryResponse(BaseModel):
     sources: List[SourceItem]
 
 
-class HealthResponse(BaseModel):
-    status: str
-    message: str
-    version: str
-    backend: str
-    vector_store: Dict[str, Any]
-
-
 class DocumentsResponse(BaseModel):
     count: int
     documents: List[str]
@@ -140,8 +153,12 @@ async def unhandled_exception_handler(_: Request, exc: Exception):
     return JSONResponse(status_code=500, content=payload)
 
 
-@app.get("/", response_model=HealthResponse)
+@app.get("/")
 async def root():
+    frontend_dist = _frontend_dist_dir()
+    if frontend_dist is not None:
+        return FileResponse(frontend_dist / "index.html")
+
     vector_status = test_vector_store()
     return {
         "status": "healthy",
@@ -192,6 +209,20 @@ async def test_vector():
         return test_vector_store()
     except Exception as exc:
         raise HTTPException(status_code=500, detail={"message": str(exc)})
+
+
+@app.get("/{full_path:path}", include_in_schema=False)
+async def frontend(full_path: str):
+    frontend_dist = _frontend_dist_dir()
+    if frontend_dist is None:
+        raise HTTPException(status_code=404, detail={"message": "Not found"})
+
+    if full_path:
+        candidate = _safe_frontend_file(frontend_dist, full_path)
+        if candidate is not None:
+            return FileResponse(candidate)
+
+    return FileResponse(frontend_dist / "index.html")
 
 
 if __name__ == "__main__":
