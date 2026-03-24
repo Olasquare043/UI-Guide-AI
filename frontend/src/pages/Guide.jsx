@@ -55,10 +55,12 @@ const Guide = () => {
   const [reports, setReports] = useState({})
   const abortRef = useRef(null)
   const {
+    capabilitiesLoading,
+    dictationSupported,
     isListening,
     isTranscribing,
     listeningTarget,
-    mediaRecordingSupported,
+    playbackSupported,
     speakingId,
     speechRecognitionSupported,
     stopListening,
@@ -67,7 +69,6 @@ const Guide = () => {
     togglePlayback,
     transcribingTarget,
   } = useSpeech({ pushToast })
-  const canDictate = speechRecognitionSupported || mediaRecordingSupported
 
   const defaultValues = useMemo(
     () => ({
@@ -252,7 +253,9 @@ const Guide = () => {
         })
       }
       disabled={
-        isLoading || isTranscribing || !canDictate || (isListening && listeningTarget !== fieldId)
+        isLoading ||
+        isTranscribing ||
+        ((!dictationSupported && !capabilitiesLoading) || (isListening && listeningTarget !== fieldId))
       }
       className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold ${
         isListening && listeningTarget === fieldId
@@ -271,7 +274,9 @@ const Guide = () => {
           ? 'Stop'
           : speechRecognitionSupported
             ? 'Dictate'
-            : 'Record'}
+            : capabilitiesLoading
+              ? 'Checking...'
+              : 'Record'}
     </button>
   )
 
@@ -468,7 +473,7 @@ const Guide = () => {
                     text: result.response,
                   })
                 }
-                disabled={!result}
+                disabled={!result || (!playbackSupported && !capabilitiesLoading)}
                 className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:border-[var(--ui-brand)] hover:text-[var(--ui-brand)] disabled:opacity-50"
               >
                 {result && speakingId === result.id ? (

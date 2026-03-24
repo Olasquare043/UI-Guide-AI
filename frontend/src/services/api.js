@@ -108,6 +108,19 @@ export const checkHealth = async ({ signal } = {}) => {
   }
 }
 
+export const getCapabilities = async ({ signal } = {}) => {
+  try {
+    const response = await api.get('/capabilities', { signal })
+    return {
+      serverSpeechSynthesis: response.data.server_speech_synthesis || false,
+      serverSpeechTranscription: response.data.server_speech_transcription || false,
+      vectorStoreReady: response.data.vector_store_ready || false,
+    }
+  } catch (error) {
+    throw parseError(error)
+  }
+}
+
 export const getDocuments = async ({ signal } = {}) => {
   try {
     const response = await api.get('/documents', { signal })

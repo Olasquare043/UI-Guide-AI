@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import useCapabilities from './useCapabilities'
 import { synthesizeSpeech, transcribeAudio } from '../services/api'
 import { toSpeechPlainText } from '../utils/speech'
 
 const useSpeech = ({ pushToast }) => {
+  const capabilities = useCapabilities()
   const [isListening, setIsListening] = useState(false)
   const [listeningTarget, setListeningTarget] = useState(null)
   const [isTranscribing, setIsTranscribing] = useState(false)
@@ -21,18 +23,27 @@ const useSpeech = ({ pushToast }) => {
 
   const speechRecognitionSupported = useMemo(() => {
     if (typeof window === 'undefined') return false
-    return 'SpeechRecognition' in window || 'webkitSpeechRecognition' in window
+    return (
+      typeof window.SpeechRecognition === 'function' ||
+      typeof window.webkitSpeechRecognition === 'function'
+    )
   }, [])
 
   const mediaRecordingSupported = useMemo(() => {
     if (typeof window === 'undefined') return false
-    return 'MediaRecorder' in window && !!navigator.mediaDevices?.getUserMedia
+    return typeof window.MediaRecorder === 'function' && !!navigator.mediaDevices?.getUserMedia
   }, [])
 
   const browserSpeechPlaybackSupported = useMemo(() => {
     if (typeof window === 'undefined') return false
-    return 'speechSynthesis' in window
+    return typeof window.speechSynthesis !== 'undefined'
   }, [])
+
+  const serverSpeechSynthesisSupported = capabilities.serverSpeechSynthesis
+  const serverSpeechTranscriptionSupported = capabilities.serverSpeechTranscription
+  const dictationSupported =
+    speechRecognitionSupported || (mediaRecordingSupported && serverSpeechTranscriptionSupported)
+  const playbackSupported = browserSpeechPlaybackSupported || serverSpeechSynthesisSupported
 
   const stopPlayback = useCallback(() => {
     playbackAbortRef.current?.abort()
@@ -126,6 +137,17 @@ const useSpeech = ({ pushToast }) => {
 
       stopPlayback()
 
+      if (!serverSpeechSynthesisSupported) {
+        if (!playWithBrowserSpeech(id, spokenText)) {
+          pushToast({
+            title: 'Read aloud unavailable',
+            description: 'Speech playback is not available in this browser.',
+            variant: 'error',
+          })
+        }
+        return
+      }
+
       const controller = new AbortController()
       playbackAbortRef.current = controller
 
@@ -192,7 +214,7 @@ const useSpeech = ({ pushToast }) => {
         }
       }
     },
-    [playWithBrowserSpeech, pushToast, speakingId, stopPlayback]
+    [playWithBrowserSpeech, pushToast, serverSpeechSynthesisSupported, speakingId, stopPlayback]
   )
 
   const startRecorderDictation = useCallback(
@@ -364,12 +386,22 @@ const useSpeech = ({ pushToast }) => {
         }
       }
 
+      if (!serverSpeechTranscriptionSupported) {
+        pushToast({
+          title: 'Voice input unavailable',
+          description: 'Server transcription is not available right now.',
+          variant: 'error',
+        })
+        return
+      }
+
       await startRecorderDictation({ id, initialText, onTranscript })
     },
     [
       isListening,
       listeningTarget,
       pushToast,
+      serverSpeechTranscriptionSupported,
       speechRecognitionSupported,
       startRecorderDictation,
       stopListening,
@@ -379,10 +411,15 @@ const useSpeech = ({ pushToast }) => {
 
   return {
     browserSpeechPlaybackSupported,
+    capabilitiesLoading: capabilities.isLoading,
+    dictationSupported,
     isListening,
     isTranscribing,
     listeningTarget,
     mediaRecordingSupported,
+    playbackSupported,
+    serverSpeechSynthesisSupported,
+    serverSpeechTranscriptionSupported,
     speakingId,
     speechRecognitionSupported,
     stopListening,

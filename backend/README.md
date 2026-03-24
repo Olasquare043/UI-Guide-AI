@@ -50,6 +50,7 @@ python main.py
 
 - `GET /` health with vector store status in API-only mode, or the frontend app when `FRONTEND_DIST_DIR` is set
 - `GET /health` liveness endpoint
+- `GET /capabilities` backend feature flags for frontend readiness checks
 - `POST /chat` main chat endpoint
 - `POST /speech/transcribe` server-side audio transcription fallback
 - `POST /speech/synthesize` server-side speech generation for read-aloud

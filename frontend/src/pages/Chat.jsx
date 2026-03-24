@@ -37,10 +37,12 @@ const Chat = () => {
   const messagesContainerRef = useRef(null)
   const abortRef = useRef(null)
   const {
+    capabilitiesLoading,
+    dictationSupported,
     isListening,
     isTranscribing,
     listeningTarget,
-    mediaRecordingSupported,
+    playbackSupported,
     speakingId,
     speechRecognitionSupported,
     stopListening,
@@ -54,8 +56,6 @@ const Chat = () => {
     () => chats.find((chat) => chat.id === currentChatId),
     [chats, currentChatId]
   )
-  const canDictate = speechRecognitionSupported || mediaRecordingSupported
-
   const scrollToBottom = () => {
     const container = messagesContainerRef.current
     if (!container) return
@@ -374,7 +374,8 @@ const Chat = () => {
                       <button
                         type="button"
                         onClick={() => togglePlayback({ id: messageId, text: message.content })}
-                        className="inline-flex items-center gap-1 text-xs font-semibold text-slate-400 hover:text-slate-700"
+                        disabled={!playbackSupported && !capabilitiesLoading}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-slate-400 hover:text-slate-700 disabled:cursor-not-allowed disabled:text-slate-300"
                       >
                         {speakingId === messageId ? (
                           <VolumeX className="h-3 w-3" />
@@ -421,7 +422,7 @@ const Chat = () => {
                   onTranscript: setInput,
                 })
               }
-              disabled={isLoading || isTranscribing || !canDictate}
+              disabled={isLoading || isTranscribing || (!dictationSupported && !capabilitiesLoading)}
               aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
               className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold shadow ${
                 isListening && listeningTarget === 'chat-input'
@@ -440,7 +441,9 @@ const Chat = () => {
                   ? 'Stop'
                   : speechRecognitionSupported
                     ? 'Speak'
-                    : 'Record'}
+                    : capabilitiesLoading
+                      ? 'Checking...'
+                      : 'Record'}
             </button>
             {isLoading ? (
               <button

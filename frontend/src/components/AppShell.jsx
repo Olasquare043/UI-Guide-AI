@@ -20,9 +20,16 @@ const statusStyles = {
   checking: 'bg-slate-100 text-slate-600',
 }
 
+const voiceStatusStyles = {
+  ready: 'bg-sky-100 text-sky-700',
+  browser: 'bg-slate-100 text-slate-600',
+}
+
 const AppShell = ({ children }) => {
   const [mobileOpen, setMobileOpen] = useState(false)
   const status = useApiStatus()
+  const serverVoiceReady =
+    status.capabilities?.serverSpeechSynthesis || status.capabilities?.serverSpeechTranscription
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -55,6 +62,13 @@ const AppShell = ({ children }) => {
               {status.state === 'online' && status.latency
                 ? `API ${status.latency}ms`
                 : `API ${status.state}`}
+            </span>
+            <span
+              className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                voiceStatusStyles[serverVoiceReady ? 'ready' : 'browser']
+              }`}
+            >
+              {serverVoiceReady ? 'Server speech ready' : 'Browser speech only'}
             </span>
             <NavLink
               to="/app"
@@ -125,6 +139,16 @@ const AppShell = ({ children }) => {
               <span>API status</span>
               <span className={`rounded-full px-2 py-1 ${statusStyles[status.state]}`}>
                 {status.state}
+              </span>
+            </div>
+            <div className="mt-3 flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 text-xs text-slate-600">
+              <span>Voice status</span>
+              <span
+                className={`rounded-full px-2 py-1 ${
+                  voiceStatusStyles[serverVoiceReady ? 'ready' : 'browser']
+                }`}
+              >
+                {serverVoiceReady ? 'server ready' : 'browser only'}
               </span>
             </div>
           </Dialog.Panel>

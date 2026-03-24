@@ -16,11 +16,15 @@ except ImportError:
     from settings import get_settings
 
 
-def _require_openai_audio() -> None:
+def server_speech_available() -> bool:
     settings = get_settings()
+    return OpenAI is not None and bool(settings.openai_api_key)
+
+
+def _require_openai_audio() -> None:
     if OpenAI is None:
         raise RuntimeError(f"OpenAI client is unavailable: {_openai_import_error}")
-    if not settings.openai_api_key:
+    if not get_settings().openai_api_key:
         raise RuntimeError("OPENAI_API_KEY is required for server speech features")
 
 

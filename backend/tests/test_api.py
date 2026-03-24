@@ -122,3 +122,18 @@ def test_speech_synthesize(monkeypatch):
     assert response.status_code == 200
     assert response.content == b"mp3-bytes"
     assert response.headers["content-type"] == "audio/mpeg"
+
+
+def test_capabilities(monkeypatch):
+    monkeypatch.setattr(main, "server_speech_available", lambda: True)
+    monkeypatch.setattr(main, "persist_dir", Path("backend/chroma_db"))
+
+    client = TestClient(main.app)
+    response = client.get("/capabilities")
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "server_speech_transcription": True,
+        "server_speech_synthesis": True,
+        "vector_store_ready": True,
+    }

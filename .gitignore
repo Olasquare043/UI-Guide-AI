@@ -56,3 +56,5 @@ chroma_db.tar.gz
 node_modules/
 frontend/dist/
 frontend/.vite/
+frontend/playwright-report/
+frontend/test-results/

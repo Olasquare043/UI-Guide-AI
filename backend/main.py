@@ -42,11 +42,12 @@ except Exception as exc:
 
 try:
     try:
-        from .speech import synthesize_speech, transcribe_audio
+        from .speech import server_speech_available, synthesize_speech, transcribe_audio
     except ImportError:
-        from speech import synthesize_speech, transcribe_audio
+        from speech import server_speech_available, synthesize_speech, transcribe_audio
 except Exception as exc:
     logger.warning("Speech dependencies failed to load: %s", exc)
+    server_speech_available = _missing_dependency_error(exc)
     synthesize_speech = _missing_dependency_error(exc)
     transcribe_audio = _missing_dependency_error(exc)
 
@@ -138,6 +139,12 @@ class SpeechSynthesisRequest(BaseModel):
     speed: float = Field(default=1.0, ge=0.25, le=4.0)
 
 
+class CapabilitiesResponse(BaseModel):
+    server_speech_transcription: bool
+    server_speech_synthesis: bool
+    vector_store_ready: bool
+
+
 @app.exception_handler(HTTPException)
 async def http_exception_handler(_: Request, exc: HTTPException):
     trace_id = str(uuid.uuid4())
@@ -208,6 +215,21 @@ async def chat(request: QueryRequest):
 @app.get("/health")
 async def health():
     return {"status": "healthy"}
+
+
+@app.get("/capabilities", response_model=CapabilitiesResponse)
+async def capabilities():
+    speech_enabled = False
+    try:
+        speech_enabled = bool(server_speech_available())
+    except Exception:
+        speech_enabled = False
+
+    return {
+        "server_speech_transcription": speech_enabled,
+        "server_speech_synthesis": speech_enabled,
+        "vector_store_ready": persist_dir.exists(),
+    }
 
 
 @app.post("/speech/transcribe", response_model=SpeechTranscriptionResponse)
