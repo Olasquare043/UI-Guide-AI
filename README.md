@@ -2,6 +2,13 @@
 
 UI Guide is a retrieval-augmented assistant that helps students, staff, and prospective students navigate University of Ibadan policies, admissions, courses, and campus services. It pairs a guided walkthrough experience with a reliable chat interface, backed by official documents and clear, step-by-step explanations.
 
+Highlights:
+
+- Guided and free-form chat experiences
+- Official-document retrieval with citations
+- Adjustable response verbosity
+- Browser-native voice input and read-aloud support in chat
+
 ## Stack
 
 - Frontend: React + Vite + Tailwind CSS
@@ -14,8 +21,10 @@ UI Guide is a retrieval-augmented assistant that helps students, staff, and pros
 
 ```
 UI-Guide-AI/
-├── backend/           # FastAPI backend
+├── backend/           # FastAPI backend + bundled ChromaDB
 ├── frontend/          # React frontend
+├── render.yaml        # Render Blueprint deployment
+├── Dockerfile         # One-service Docker deployment
 ├── EVALUATION/        # Audit and evaluation notes
 └── requirements.txt   # Full backend dependencies (local dev/indexing)
 ```
@@ -100,6 +109,9 @@ Backend (`backend/.env.example`):
 - `LLM_PROVIDER` (auto | groq | openai)
 - `EMBEDDINGS_PROVIDER` (auto | openai | local)
 - `EMBEDDINGS_MODEL` (for local embeddings)
+- `SPEECH_TO_TEXT_MODEL`
+- `TEXT_TO_SPEECH_MODEL`
+- `SPEECH_VOICE`
 - `INDEX_CHUNK_SIZE`
 - `INDEX_CHUNK_OVERLAP`
 - `INDEX_BATCH_SIZE`
@@ -110,6 +122,7 @@ Backend (`backend/.env.example`):
 - `INDEX_OCR_DPI`
 - `DOCS_DIR`
 - `CHROMA_DB_DIR`
+- `CHROMA_DB_URL`
 - `ALLOWED_ORIGINS`
 - `DEBUG`
 - `ANONYMIZED_TELEMETRY` (false recommended to disable Chroma telemetry)
@@ -138,8 +151,9 @@ Backend:
 ## Deployment Notes
 
 - Build the ChromaDB index before deploying.
-- Prefer keeping the generated `chroma_db` on persistent storage or in a release asset. Committing it to git is only reasonable when it is genuinely small, changes rarely, and you accept repo history growth.
+- This repo currently bundles `backend/chroma_db` because the dataset is small and mostly static. For larger or frequently updated datasets, prefer persistent storage or a release asset instead of committing the vector store.
 - Configure `OPENAI_API_KEY` and `ALLOWED_ORIGINS` in your hosting provider.
+- Server-side speech fallback uses `OPENAI_API_KEY` for transcription and TTS. Without it, browser-native voice still works on supported browsers.
 - For frontend hosting (Vercel, Netlify), set `VITE_API_URL` to your API URL.
 - If `OPENAI_API_KEY` is missing, the backend will use Groq for chat (if set) and local embeddings.
 - If you switch embeddings provider, rebuild the vector store.
@@ -165,6 +179,7 @@ Notes:
 
 - The blueprint defaults `ALLOWED_ORIGINS` to `*` so the frontend works immediately. Tighten this later if you want stricter CORS.
 - The backend uses `backend/requirements.render.txt` so Render can deploy from the `backend/` root directory without depending on repo-root files.
+- No `CHROMA_DB_URL` or mounted disk is required for the current bundled-DB setup.
 
 ### Render Docker (One Service)
 
@@ -193,8 +208,8 @@ python -m pip install -r requirements.railway.txt
 python start.py
 ```
 
-- Set `CHROMA_DB_DIR` to your mounted volume path if you are not using the default `./chroma_db`.
-- Set `CHROMA_DB_URL` to your `chroma_db.tar.gz` archive URL if you want startup to seed an empty volume automatically.
+- `CHROMA_DB_DIR` is optional and only needed if you do not want to use the bundled `backend/chroma_db`.
+- `CHROMA_DB_URL` is optional and only needed if you want startup to seed an empty runtime volume automatically.
 - Configure `LLM_PROVIDER=auto` and `EMBEDDINGS_PROVIDER=auto` to allow fallback to Groq + local embeddings when OpenAI is not available.
 - `start.py` self-heals missing runtime deps (like `uvicorn`) before booting.
 

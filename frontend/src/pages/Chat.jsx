@@ -5,11 +5,17 @@ import {
   Copy,
   Loader2,
   MessageSquarePlus,
+  Mic,
+  MicOff,
   Send,
+  Square,
   Trash2,
+  Volume2,
+  VolumeX,
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import MarkdownContent from '../components/MarkdownContent'
+import useSpeech from '../hooks/useSpeech'
 import useToast from '../hooks/useToast'
 import useLocalStorage from '../hooks/useLocalStorage'
 import usePreferences from '../hooks/usePreferences'
@@ -30,11 +36,25 @@ const Chat = () => {
   const messagesEndRef = useRef(null)
   const messagesContainerRef = useRef(null)
   const abortRef = useRef(null)
+  const {
+    isListening,
+    isTranscribing,
+    listeningTarget,
+    mediaRecordingSupported,
+    speakingId,
+    speechRecognitionSupported,
+    stopListening,
+    stopPlayback,
+    toggleListening,
+    togglePlayback,
+    transcribingTarget,
+  } = useSpeech({ pushToast })
 
   const currentChat = useMemo(
     () => chats.find((chat) => chat.id === currentChatId),
     [chats, currentChatId]
   )
+  const canDictate = speechRecognitionSupported || mediaRecordingSupported
 
   const scrollToBottom = () => {
     const container = messagesContainerRef.current
@@ -81,9 +101,18 @@ const Chat = () => {
     }
   }
 
+  const handleCancelRequest = useCallback(() => {
+    abortRef.current?.abort()
+    abortRef.current = null
+    setIsLoading(false)
+  }, [])
+
   const handleSubmit = async (event) => {
     event.preventDefault()
     if (!input.trim() || !currentChat || isLoading) return
+
+    stopListening()
+    stopPlayback()
 
     if (abortRef.current) {
       abortRef.current.abort()
@@ -271,77 +300,95 @@ const Chat = () => {
           ref={messagesContainerRef}
           className="mt-6 flex-1 space-y-4 overflow-y-auto pr-2 min-h-0"
         >
-          {currentChat?.messages.map((message, index) => (
-            <div
-              key={`${message.role}-${index}`}
-              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
+          {currentChat?.messages.map((message, index) => {
+            const messageId = message.createdAt || `${message.role}-${index}`
+
+            return (
               <div
-                className={`max-w-[85%] rounded-2xl border px-4 py-3 text-sm shadow-sm ${
-                  message.role === 'user'
-                    ? 'border-[var(--ui-brand)] bg-[var(--ui-brand)] text-white'
-                    : message.isError
-                      ? 'border-rose-200 bg-rose-50 text-rose-800'
-                      : 'border-slate-100 bg-white text-slate-700'
-                }`}
+                key={`${message.role}-${index}`}
+                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                {message.role === 'assistant' && message.isError ? (
-                  <div className="space-y-2">
-                    <p className="font-semibold">We hit a snag.</p>
-                    <p className="text-xs">{message.content}</p>
-                    {(message.details || message.traceId) && (
-                      <details className="rounded-xl border border-rose-200 bg-white/80 px-3 py-2 text-xs">
-                        <summary className="cursor-pointer font-semibold text-rose-700">
-                          Technical details
-                        </summary>
-                        {message.traceId && <p>Trace ID: {message.traceId}</p>}
-                        {message.details && (
-                          <pre className="mt-2 whitespace-pre-wrap">{message.details}</pre>
+                <div
+                  className={`max-w-[85%] rounded-2xl border px-4 py-3 text-sm shadow-sm ${
+                    message.role === 'user'
+                      ? 'border-[var(--ui-brand)] bg-[var(--ui-brand)] text-white'
+                      : message.isError
+                        ? 'border-rose-200 bg-rose-50 text-rose-800'
+                        : 'border-slate-100 bg-white text-slate-700'
+                  }`}
+                >
+                  {message.role === 'assistant' && message.isError ? (
+                    <div className="space-y-2">
+                      <p className="font-semibold">We hit a snag.</p>
+                      <p className="text-xs">{message.content}</p>
+                      {(message.details || message.traceId) && (
+                        <details className="rounded-xl border border-rose-200 bg-white/80 px-3 py-2 text-xs">
+                          <summary className="cursor-pointer font-semibold text-rose-700">
+                            Technical details
+                          </summary>
+                          {message.traceId && <p>Trace ID: {message.traceId}</p>}
+                          {message.details && (
+                            <pre className="mt-2 whitespace-pre-wrap">{message.details}</pre>
+                          )}
+                        </details>
+                      )}
+                    </div>
+                  ) : message.role === 'assistant' ? (
+                    <MarkdownContent>{message.content}</MarkdownContent>
+                  ) : (
+                    <p>{message.content}</p>
+                  )}
+
+                  {message.role === 'assistant' && message.sources?.length > 0 && (
+                    <details className="group mt-3 rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-600">
+                      <summary className="flex cursor-pointer items-center justify-between gap-2 font-semibold text-slate-700">
+                        <span className="flex items-center gap-2">
+                          <BookOpen className="h-3 w-3" />
+                          Sources ({message.sources.length})
+                        </span>
+                        <span className="flex items-center gap-1 text-[0.65rem] font-semibold text-slate-400">
+                          <ChevronDown className="h-4 w-4 group-open:hidden" />
+                          <ChevronUp className="h-4 w-4 hidden group-open:block" />
+                        </span>
+                      </summary>
+                      <ul className="mt-2 space-y-1">
+                        {message.sources.map((source, sourceIndex) => (
+                          <li key={`${source.document}-${sourceIndex}`}>
+                            {source.document || 'UI document'} - Page {source.page || 'N/A'}
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  )}
+
+                  {message.role === 'assistant' && !message.isError && (
+                    <div className="mt-3 flex flex-wrap gap-3">
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(message.content)}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-slate-400 hover:text-slate-700"
+                      >
+                        <Copy className="h-3 w-3" />
+                        Copy response
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => togglePlayback({ id: messageId, text: message.content })}
+                        className="inline-flex items-center gap-1 text-xs font-semibold text-slate-400 hover:text-slate-700"
+                      >
+                        {speakingId === messageId ? (
+                          <VolumeX className="h-3 w-3" />
+                        ) : (
+                          <Volume2 className="h-3 w-3" />
                         )}
-                      </details>
-                    )}
-                  </div>
-                ) : message.role === 'assistant' ? (
-                  <MarkdownContent>{message.content}</MarkdownContent>
-                ) : (
-                  <p>{message.content}</p>
-                )}
-
-                {message.role === 'assistant' && message.sources?.length > 0 && (
-                  <details className="group mt-3 rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-600">
-                    <summary className="flex cursor-pointer items-center justify-between gap-2 font-semibold text-slate-700">
-                      <span className="flex items-center gap-2">
-                        <BookOpen className="h-3 w-3" />
-                        Sources ({message.sources.length})
-                      </span>
-                      <span className="flex items-center gap-1 text-[0.65rem] font-semibold text-slate-400">
-                        <ChevronDown className="h-4 w-4 group-open:hidden" />
-                        <ChevronUp className="h-4 w-4 hidden group-open:block" />
-                      </span>
-                    </summary>
-                    <ul className="mt-2 space-y-1">
-                      {message.sources.map((source, sourceIndex) => (
-                        <li key={`${source.document}-${sourceIndex}`}>
-                          {source.document || 'UI document'} - Page {source.page || 'N/A'}
-                        </li>
-                      ))}
-                    </ul>
-                  </details>
-                )}
-
-                {message.role === 'assistant' && !message.isError && (
-                  <button
-                    type="button"
-                    onClick={() => handleCopy(message.content)}
-                    className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-slate-400 hover:text-slate-700"
-                  >
-                    <Copy className="h-3 w-3" />
-                    Copy response
-                  </button>
-                )}
+                        {speakingId === messageId ? 'Stop reading' : 'Read aloud'}
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
 
           {isLoading && (
             <div className="flex justify-start">
@@ -354,25 +401,72 @@ const Chat = () => {
           <div ref={messagesEndRef} />
         </div>
 
-        <form onSubmit={handleSubmit} className="mt-6 flex gap-3">
-          <input
-            type="text"
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            placeholder="Ask about admissions, policies, courses, or services..."
-            aria-label="Message UI Guide"
-            className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm focus:border-[var(--ui-brand)]"
-            disabled={isLoading}
-          />
-          <button
-            type="submit"
-            disabled={isLoading || !input.trim()}
-            className="inline-flex items-center gap-2 rounded-2xl bg-[var(--ui-brand)] px-4 py-3 text-sm font-semibold text-white shadow hover:bg-[var(--ui-brand-strong)] disabled:opacity-60"
-          >
-            <Send className="h-4 w-4" />
-            Send
-          </button>
-        </form>
+        <div className="mt-6 space-y-3">
+          <form onSubmit={handleSubmit} className="flex gap-3">
+            <input
+              type="text"
+              value={input}
+              onChange={(event) => setInput(event.target.value)}
+              placeholder="Ask about admissions, policies, courses, or services..."
+              aria-label="Message UI Guide"
+              className="flex-1 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm focus:border-[var(--ui-brand)]"
+              disabled={isLoading}
+            />
+            <button
+              type="button"
+              onClick={() =>
+                toggleListening({
+                  id: 'chat-input',
+                  initialText: input,
+                  onTranscript: setInput,
+                })
+              }
+              disabled={isLoading || isTranscribing || !canDictate}
+              aria-label={isListening ? 'Stop voice input' : 'Start voice input'}
+              className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold shadow ${
+                isListening && listeningTarget === 'chat-input'
+                  ? 'border-amber-200 bg-amber-50 text-amber-700'
+                  : 'border-slate-200 bg-white text-slate-600 hover:border-[var(--ui-brand)] hover:text-[var(--ui-brand)]'
+              } disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-50 disabled:text-slate-300`}
+            >
+              {isListening && listeningTarget === 'chat-input' ? (
+                <MicOff className="h-4 w-4" />
+              ) : (
+                <Mic className="h-4 w-4" />
+              )}
+              {isTranscribing && transcribingTarget === 'chat-input'
+                ? 'Transcribing...'
+                : isListening && listeningTarget === 'chat-input'
+                  ? 'Stop'
+                  : speechRecognitionSupported
+                    ? 'Speak'
+                    : 'Record'}
+            </button>
+            {isLoading ? (
+              <button
+                type="button"
+                onClick={handleCancelRequest}
+                className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700 shadow hover:border-rose-300"
+              >
+                <Square className="h-4 w-4" />
+                Stop
+              </button>
+            ) : (
+              <button
+                type="submit"
+                disabled={!input.trim()}
+                className="inline-flex items-center gap-2 rounded-2xl bg-[var(--ui-brand)] px-4 py-3 text-sm font-semibold text-white shadow hover:bg-[var(--ui-brand-strong)] disabled:opacity-60"
+              >
+                <Send className="h-4 w-4" />
+                Send
+              </button>
+            )}
+          </form>
+          <p className="text-xs text-slate-500">
+            Use the mic to dictate questions. If live dictation is unavailable, UI Guide records
+            first and transcribes after you stop.
+          </p>
+        </div>
       </section>
     </div>
   )

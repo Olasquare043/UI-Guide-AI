@@ -33,6 +33,9 @@ class Settings(BaseModel):
     llm_provider: str = "auto"
     embeddings_provider: str = "auto"
     embeddings_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+    speech_to_text_model: str = "whisper-1"
+    text_to_speech_model: str = "tts-1"
+    speech_voice: str = "alloy"
     docs_dir: str = "./docs"
     chroma_db_dir: str = "./chroma_db"
     allowed_origins: str = "http://localhost:5173"
@@ -62,6 +65,9 @@ def get_settings() -> Settings:
         llm_provider=os.getenv("LLM_PROVIDER", "auto").lower(),
         embeddings_provider=os.getenv("EMBEDDINGS_PROVIDER", "auto").lower(),
         embeddings_model=os.getenv("EMBEDDINGS_MODEL", "sentence-transformers/all-MiniLM-L6-v2"),
+        speech_to_text_model=os.getenv("SPEECH_TO_TEXT_MODEL", "whisper-1"),
+        text_to_speech_model=os.getenv("TEXT_TO_SPEECH_MODEL", "tts-1"),
+        speech_voice=os.getenv("SPEECH_VOICE", "alloy"),
         docs_dir=os.getenv("DOCS_DIR", "./docs"),
         chroma_db_dir=os.getenv("CHROMA_DB_DIR", "./chroma_db"),
         allowed_origins=os.getenv("ALLOWED_ORIGINS", "http://localhost:5173"),

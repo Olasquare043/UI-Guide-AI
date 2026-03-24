@@ -7,6 +7,12 @@ const isLocalHost =
 const API_BASE_URL = import.meta.env.VITE_API_URL || (isLocalHost ? 'http://localhost:8000' : '')
 const DEBUG = String(import.meta.env.VITE_DEBUG).toLowerCase() === 'true'
 
+const buildApiUrl = (path) => {
+  if (API_BASE_URL) return `${API_BASE_URL}${path}`
+  if (typeof window !== 'undefined') return `${window.location.origin}${path}`
+  return path
+}
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   headers: {
@@ -108,6 +114,72 @@ export const getDocuments = async ({ signal } = {}) => {
     return response.data
   } catch (error) {
     throw parseError(error)
+  }
+}
+
+export const transcribeAudio = async ({ blob, fileName = 'recording.webm', language, signal }) => {
+  const formData = new FormData()
+  formData.append('file', new File([blob], fileName, { type: blob.type || 'audio/webm' }))
+  if (language) {
+    formData.append('language', language)
+  }
+
+  const response = await fetch(buildApiUrl('/speech/transcribe'), {
+    method: 'POST',
+    body: formData,
+    signal,
+  })
+
+  if (!response.ok) {
+    let payload = {}
+    try {
+      payload = await response.json()
+    } catch {
+      payload = {}
+    }
+
+    const error = payload.error || payload
+    throw new ApiError(error.message || 'Unable to transcribe audio.', {
+      status: response.status,
+      traceId: error.trace_id,
+      details: error.details,
+    })
+  }
+
+  const data = await response.json()
+  return { text: data.text || '' }
+}
+
+export const synthesizeSpeech = async ({ text, voice, speed = 1, signal }) => {
+  const response = await fetch(buildApiUrl('/speech/synthesize'), {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'audio/mpeg',
+    },
+    body: JSON.stringify({ text, voice, speed }),
+    signal,
+  })
+
+  if (!response.ok) {
+    let payload = {}
+    try {
+      payload = await response.json()
+    } catch {
+      payload = {}
+    }
+
+    const error = payload.error || payload
+    throw new ApiError(error.message || 'Unable to generate speech.', {
+      status: response.status,
+      traceId: error.trace_id,
+      details: error.details,
+    })
+  }
+
+  return {
+    blob: await response.blob(),
+    contentType: response.headers.get('content-type') || 'audio/mpeg',
   }
 }
 

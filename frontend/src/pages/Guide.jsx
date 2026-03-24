@@ -1,12 +1,17 @@
-﻿import {
+import {
   AlertTriangle,
   Copy,
   Download,
   FileText,
+  Mic,
+  MicOff,
   RefreshCcw,
   Sparkles,
+  Square,
   ThumbsDown,
   ThumbsUp,
+  Volume2,
+  VolumeX,
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { z } from 'zod'
@@ -15,6 +20,7 @@ import { useForm } from 'react-hook-form'
 import FormField from '../components/FormField'
 import MarkdownContent from '../components/MarkdownContent'
 import Stepper from '../components/Stepper'
+import useSpeech from '../hooks/useSpeech'
 import useToast from '../hooks/useToast'
 import useLocalStorage from '../hooks/useLocalStorage'
 import usePreferences from '../hooks/usePreferences'
@@ -48,6 +54,20 @@ const Guide = () => {
   const [reporting, setReporting] = useState({})
   const [reports, setReports] = useState({})
   const abortRef = useRef(null)
+  const {
+    isListening,
+    isTranscribing,
+    listeningTarget,
+    mediaRecordingSupported,
+    speakingId,
+    speechRecognitionSupported,
+    stopListening,
+    stopPlayback,
+    toggleListening,
+    togglePlayback,
+    transcribingTarget,
+  } = useSpeech({ pushToast })
+  const canDictate = speechRecognitionSupported || mediaRecordingSupported
 
   const defaultValues = useMemo(
     () => ({
@@ -73,13 +93,17 @@ const Guide = () => {
   })
 
   const watchedVerbosity = watch('verbosity')
+  const taskValue = watch('task')
+  const uiDescriptionValue = watch('uiDescription')
+  const constraintsValue = watch('constraints')
+
   useEffect(() => {
     if (watchedVerbosity) {
       setVerbosity(watchedVerbosity)
     }
   }, [watchedVerbosity, setVerbosity])
 
-  const summary = useMemo(() => result?.summary || '', [result])
+  const summary = useMemo(() => result?.parsed?.summary || '', [result])
 
   const handleFileUpload = (event) => {
     const file = event.target.files?.[0]
@@ -109,6 +133,9 @@ const Guide = () => {
     if (abortRef.current) {
       abortRef.current.abort()
     }
+
+    stopListening()
+    stopPlayback()
 
     const controller = new AbortController()
     abortRef.current = controller
@@ -188,10 +215,19 @@ const Guide = () => {
     URL.revokeObjectURL(url)
   }
 
+  const handleCancelGeneration = () => {
+    abortRef.current?.abort()
+    abortRef.current = null
+    setIsLoading(false)
+    setCurrentStep(0)
+  }
+
   const handleReset = () => {
     if (abortRef.current) {
       abortRef.current.abort()
     }
+    stopListening()
+    stopPlayback()
     reset(defaultValues)
     setResult(null)
     setCurrentStep(0)
@@ -200,6 +236,44 @@ const Guide = () => {
     setReporting({})
     setReports({})
   }
+
+  const renderDictationButton = (fieldId, value) => (
+    <button
+      type="button"
+      onClick={() =>
+        toggleListening({
+          id: fieldId,
+          initialText: value || '',
+          onTranscript: (nextValue) =>
+            setValue(fieldId, nextValue, {
+              shouldDirty: true,
+              shouldTouch: true,
+            }),
+        })
+      }
+      disabled={
+        isLoading || isTranscribing || !canDictate || (isListening && listeningTarget !== fieldId)
+      }
+      className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold ${
+        isListening && listeningTarget === fieldId
+          ? 'border-amber-200 bg-amber-50 text-amber-700'
+          : 'border-slate-200 bg-white text-slate-600 hover:border-[var(--ui-brand)] hover:text-[var(--ui-brand)]'
+      } disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-50 disabled:text-slate-300`}
+    >
+      {isListening && listeningTarget === fieldId ? (
+        <MicOff className="h-3.5 w-3.5" />
+      ) : (
+        <Mic className="h-3.5 w-3.5" />
+      )}
+      {isTranscribing && transcribingTarget === fieldId
+        ? 'Transcribing...'
+        : isListening && listeningTarget === fieldId
+          ? 'Stop'
+          : speechRecognitionSupported
+            ? 'Dictate'
+            : 'Record'}
+    </button>
+  )
 
   const steps = result?.parsed?.steps || []
 
@@ -266,6 +340,7 @@ const Guide = () => {
               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm focus:border-[var(--ui-brand)]"
               placeholder="Example: Guide a first-year student through course registration and fee confirmation."
             />
+            <div className="mt-3 flex justify-end">{renderDictationButton('task', taskValue)}</div>
           </FormField>
 
           <FormField
@@ -280,6 +355,9 @@ const Guide = () => {
               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm focus:border-[var(--ui-brand)]"
               placeholder="Example: The portal shows course list, payment button, and a confirmation modal."
             />
+            <div className="mt-3 flex justify-end">
+              {renderDictationButton('uiDescription', uiDescriptionValue)}
+            </div>
           </FormField>
 
           <div className="space-y-2">
@@ -308,6 +386,9 @@ const Guide = () => {
               className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm focus:border-[var(--ui-brand)]"
               placeholder="Example: Must complete within two days of registration opening."
             />
+            <div className="mt-3 flex justify-end">
+              {renderDictationButton('constraints', constraintsValue)}
+            </div>
           </FormField>
 
           <div className="space-y-3">
@@ -330,20 +411,36 @@ const Guide = () => {
             </div>
           </div>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[var(--ui-brand)] px-6 py-4 text-sm font-semibold text-white shadow-lg hover:bg-[var(--ui-brand-strong)] disabled:cursor-not-allowed disabled:bg-slate-500"
-          >
-            {isLoading ? 'Generating guidance...' : 'Generate walkthrough'}
-            <Sparkles className="h-4 w-4" />
-          </button>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-[var(--ui-brand)] px-6 py-4 text-sm font-semibold text-white shadow-lg hover:bg-[var(--ui-brand-strong)] disabled:cursor-not-allowed disabled:bg-slate-500"
+            >
+              {isLoading ? 'Generating guidance...' : 'Generate walkthrough'}
+              <Sparkles className="h-4 w-4" />
+            </button>
+            {isLoading && (
+              <button
+                type="button"
+                onClick={handleCancelGeneration}
+                className="inline-flex items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-4 text-sm font-semibold text-rose-700 shadow-sm hover:border-rose-300"
+              >
+                <Square className="h-4 w-4" />
+                Stop
+              </button>
+            )}
+          </div>
+          <p className="text-xs text-slate-500">
+            Voice input works best in Chromium browsers. When live dictation is unavailable, the
+            app records briefly and transcribes after you stop.
+          </p>
         </form>
 
         <div className="space-y-6 rounded-[28px] border border-white/70 bg-white/80 p-6 shadow-sm lg:p-8">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-slate-900">Guidance output</h2>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <button
                 type="button"
                 onClick={handleExport}
@@ -361,6 +458,25 @@ const Guide = () => {
               >
                 <Copy className="h-4 w-4" />
                 Copy
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  result &&
+                  togglePlayback({
+                    id: result.id,
+                    text: result.response,
+                  })
+                }
+                disabled={!result}
+                className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:border-[var(--ui-brand)] hover:text-[var(--ui-brand)] disabled:opacity-50"
+              >
+                {result && speakingId === result.id ? (
+                  <VolumeX className="h-4 w-4" />
+                ) : (
+                  <Volume2 className="h-4 w-4" />
+                )}
+                {result && speakingId === result.id ? 'Stop audio' : 'Read aloud'}
               </button>
             </div>
           </div>

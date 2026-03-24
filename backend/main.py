@@ -4,9 +4,10 @@ import uuid
 from pathlib import Path
 from typing import List, Literal, Optional
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi.concurrency import run_in_threadpool
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from pydantic import BaseModel, Field
 
 try:
@@ -38,6 +39,16 @@ except Exception as exc:
     get_available_documents = _missing_dependency_error(exc)
     query_agent = _missing_dependency_error(exc)
     test_vector_store = _missing_dependency_error(exc)
+
+try:
+    try:
+        from .speech import synthesize_speech, transcribe_audio
+    except ImportError:
+        from speech import synthesize_speech, transcribe_audio
+except Exception as exc:
+    logger.warning("Speech dependencies failed to load: %s", exc)
+    synthesize_speech = _missing_dependency_error(exc)
+    transcribe_audio = _missing_dependency_error(exc)
 
 
 def _frontend_dist_dir() -> Optional[Path]:
@@ -117,6 +128,16 @@ class DocumentsResponse(BaseModel):
     status: str
 
 
+class SpeechTranscriptionResponse(BaseModel):
+    text: str
+
+
+class SpeechSynthesisRequest(BaseModel):
+    text: str = Field(min_length=1, max_length=4000)
+    voice: Optional[Literal["alloy", "echo", "fable", "nova", "onyx", "shimmer"]] = None
+    speed: float = Field(default=1.0, ge=0.25, le=4.0)
+
+
 @app.exception_handler(HTTPException)
 async def http_exception_handler(_: Request, exc: HTTPException):
     trace_id = str(uuid.uuid4())
@@ -187,6 +208,44 @@ async def chat(request: QueryRequest):
 @app.get("/health")
 async def health():
     return {"status": "healthy"}
+
+
+@app.post("/speech/transcribe", response_model=SpeechTranscriptionResponse)
+async def speech_transcribe(
+    file: UploadFile = File(...),
+    language: Optional[str] = Form(default=None),
+):
+    try:
+        audio_bytes = await file.read()
+        text = await run_in_threadpool(
+            transcribe_audio,
+            audio_bytes,
+            file.filename or "recording.webm",
+            language,
+            None,
+        )
+        return {"text": text}
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail={"message": str(exc)})
+
+
+@app.post("/speech/synthesize")
+async def speech_synthesize(request: SpeechSynthesisRequest):
+    try:
+        audio_bytes, media_type = await run_in_threadpool(
+            synthesize_speech,
+            request.text,
+            request.voice,
+            request.speed,
+            "mp3",
+        )
+        return Response(
+            content=audio_bytes,
+            media_type=media_type,
+            headers={"Content-Disposition": 'inline; filename="ui-guide-response.mp3"'},
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail={"message": str(exc)})
 
 
 @app.get("/documents", response_model=DocumentsResponse)

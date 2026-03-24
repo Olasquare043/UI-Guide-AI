@@ -25,6 +25,8 @@ Notes:
 - `LLM_PROVIDER` can be `auto`, `groq`, or `openai`.
 - `EMBEDDINGS_PROVIDER` can be `auto`, `openai`, or `local`.
 - `EMBEDDINGS_MODEL` sets the local sentence-transformers model.
+- `SPEECH_TO_TEXT_MODEL` and `TEXT_TO_SPEECH_MODEL` control the OpenAI audio models used for server voice features.
+- `SPEECH_VOICE` sets the default TTS voice for read-aloud responses.
 - `OPENAI_API_KEY` is still required for OpenAI embeddings.
 - `CHROMA_DB_DIR` controls where the vector store is read from and written to.
 - Set `ANONYMIZED_TELEMETRY=false` to disable Chroma telemetry in local/dev.
@@ -46,8 +48,11 @@ python main.py
 
 ## Endpoints
 
-- `GET /` health with vector store status
+- `GET /` health with vector store status in API-only mode, or the frontend app when `FRONTEND_DIST_DIR` is set
+- `GET /health` liveness endpoint
 - `POST /chat` main chat endpoint
+- `POST /speech/transcribe` server-side audio transcription fallback
+- `POST /speech/synthesize` server-side speech generation for read-aloud
 - `GET /documents` list indexed documents
 - `GET /test-vector` vector store diagnostics
 
@@ -70,12 +75,12 @@ python start.py
 
 4. Environment:
 - `RAILPACK_PYTHON_VERSION=3.11`
-- `CHROMA_DB_DIR=<mounted-volume-path-or-./chroma_db>`
-- `CHROMA_DB_URL=<archive-url-if-you-want-startup-seeding>`
+- `CHROMA_DB_DIR=<mounted-volume-path-or-./chroma_db>` if you are not using the bundled vector store
+- `CHROMA_DB_URL=<archive-url-if-you-want-startup-seeding>` only if you want runtime download/seeding
 - `LLM_PROVIDER` / `EMBEDDINGS_PROVIDER` / API keys
 - `ANONYMIZED_TELEMETRY=false`
 
-5. Add a persistent volume and point `CHROMA_DB_DIR` at it if you do not want to keep the vector store in the repo.
+5. Add a persistent volume and point `CHROMA_DB_DIR` at it only if you do not want to keep the vector store in the repo.
 6. `start.py` will install runtime deps from `requirements.railway.txt` if modules like
    `uvicorn` are missing in the container image.
 

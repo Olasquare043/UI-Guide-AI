@@ -82,3 +82,43 @@ def test_chat_missing_key(monkeypatch):
     assert response.status_code == 503
     payload = response.json()
     assert payload["error"]["message"] == "OPENAI_API_KEY is not configured"
+
+
+def test_speech_transcribe(monkeypatch):
+    def fake_transcribe(audio_bytes, filename, language, prompt):
+        assert audio_bytes == b"audio-bytes"
+        assert filename == "question.webm"
+        assert language == "en"
+        assert prompt is None
+        return "Transcribed text"
+
+    monkeypatch.setattr(main, "transcribe_audio", fake_transcribe)
+    client = TestClient(main.app)
+    response = client.post(
+        "/speech/transcribe",
+        files={"file": ("question.webm", b"audio-bytes", "audio/webm")},
+        data={"language": "en"},
+    )
+
+    assert response.status_code == 200
+    assert response.json() == {"text": "Transcribed text"}
+
+
+def test_speech_synthesize(monkeypatch):
+    def fake_synthesize(text, voice, speed, response_format):
+        assert text == "Read this aloud"
+        assert voice == "alloy"
+        assert speed == 1.25
+        assert response_format == "mp3"
+        return b"mp3-bytes", "audio/mpeg"
+
+    monkeypatch.setattr(main, "synthesize_speech", fake_synthesize)
+    client = TestClient(main.app)
+    response = client.post(
+        "/speech/synthesize",
+        json={"text": "Read this aloud", "voice": "alloy", "speed": 1.25},
+    )
+
+    assert response.status_code == 200
+    assert response.content == b"mp3-bytes"
+    assert response.headers["content-type"] == "audio/mpeg"
