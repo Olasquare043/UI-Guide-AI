@@ -2,6 +2,7 @@
 
 const defaultPreferences = {
   verbosity: 'normal',
+  voiceMode: false,
 }
 
 const usePreferences = () => {
@@ -11,7 +12,11 @@ const usePreferences = () => {
     setPreferences((prev) => ({ ...prev, verbosity }))
   }
 
-  return { preferences, setVerbosity }
+  const setVoiceMode = (voiceMode) => {
+    setPreferences((prev) => ({ ...prev, voiceMode }))
+  }
+
+  return { preferences, setVerbosity, setVoiceMode }
 }
 
 export default usePreferences

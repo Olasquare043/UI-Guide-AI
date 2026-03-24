@@ -3,6 +3,13 @@ import useCapabilities from './useCapabilities'
 import { synthesizeSpeech, transcribeAudio } from '../services/api'
 import { toSpeechPlainText } from '../utils/speech'
 
+const speechErrorDescriptions = {
+  'audio-capture': 'We could not detect microphone audio. Check your selected microphone and try again.',
+  network: 'Speech recognition lost its connection. Please try again.',
+  'not-allowed': 'Microphone permission was denied.',
+  'service-not-allowed': 'Speech recognition is blocked in this browser session.',
+}
+
 const useSpeech = ({ pushToast }) => {
   const capabilities = useCapabilities()
   const [isListening, setIsListening] = useState(false)
@@ -10,6 +17,7 @@ const useSpeech = ({ pushToast }) => {
   const [isTranscribing, setIsTranscribing] = useState(false)
   const [transcribingTarget, setTranscribingTarget] = useState(null)
   const [speakingId, setSpeakingId] = useState(null)
+  const [dictationMode, setDictationMode] = useState(null)
 
   const recognitionRef = useRef(null)
   const transcriptCallbackRef = useRef(null)
@@ -20,6 +28,9 @@ const useSpeech = ({ pushToast }) => {
   const audioElementRef = useRef(null)
   const audioUrlRef = useRef(null)
   const playbackAbortRef = useRef(null)
+  const recognitionRestartTimeoutRef = useRef(null)
+  const manualRecognitionStopRef = useRef(false)
+  const shouldResumeRecognitionRef = useRef(false)
 
   const speechRecognitionSupported = useMemo(() => {
     if (typeof window === 'undefined') return false
@@ -44,6 +55,13 @@ const useSpeech = ({ pushToast }) => {
   const dictationSupported =
     speechRecognitionSupported || (mediaRecordingSupported && serverSpeechTranscriptionSupported)
   const playbackSupported = browserSpeechPlaybackSupported || serverSpeechSynthesisSupported
+
+  const clearRecognitionRestart = useCallback(() => {
+    if (recognitionRestartTimeoutRef.current) {
+      window.clearTimeout(recognitionRestartTimeoutRef.current)
+      recognitionRestartTimeoutRef.current = null
+    }
+  }, [])
 
   const stopPlayback = useCallback(() => {
     playbackAbortRef.current?.abort()
@@ -75,23 +93,30 @@ const useSpeech = ({ pushToast }) => {
   }, [])
 
   const stopListening = useCallback(() => {
+    manualRecognitionStopRef.current = true
+    shouldResumeRecognitionRef.current = false
+    clearRecognitionRestart()
+
     recognitionRef.current?.stop()
 
     if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
       mediaRecorderRef.current.stop()
+    } else {
+      setDictationMode(null)
     }
 
     setIsListening(false)
     setListeningTarget(null)
-  }, [])
+  }, [clearRecognitionRestart])
 
   useEffect(() => {
     return () => {
       stopListening()
       stopPlayback()
       cleanupRecorder()
+      clearRecognitionRestart()
     }
-  }, [cleanupRecorder, stopListening, stopPlayback])
+  }, [cleanupRecorder, clearRecognitionRestart, stopListening, stopPlayback])
 
   const playWithBrowserSpeech = useCallback(
     (speechId, spokenText) => {
@@ -237,6 +262,7 @@ const useSpeech = ({ pushToast }) => {
         audioChunksRef.current = []
         transcriptCallbackRef.current = onTranscript
         listeningBaseRef.current = initialText.trim()
+        setDictationMode('recording')
 
         recorder.ondataavailable = (event) => {
           if (event.data.size > 0) {
@@ -248,6 +274,7 @@ const useSpeech = ({ pushToast }) => {
           cleanupRecorder()
           setIsListening(false)
           setListeningTarget(null)
+          setDictationMode(null)
           pushToast({
             title: 'Voice input stopped',
             description: 'Unable to record audio right now.',
@@ -264,7 +291,10 @@ const useSpeech = ({ pushToast }) => {
           setIsListening(false)
           setListeningTarget(null)
 
-          if (!audioBlob.size) return
+          if (!audioBlob.size) {
+            setDictationMode(null)
+            return
+          }
 
           setIsTranscribing(true)
           setTranscribingTarget(id)
@@ -285,6 +315,7 @@ const useSpeech = ({ pushToast }) => {
           } finally {
             setIsTranscribing(false)
             setTranscribingTarget(null)
+            setDictationMode(null)
             transcriptCallbackRef.current = null
           }
         }
@@ -294,6 +325,7 @@ const useSpeech = ({ pushToast }) => {
         setIsListening(true)
       } catch (error) {
         cleanupRecorder()
+        setDictationMode(null)
         pushToast({
           title: 'Voice input unavailable',
           description:
@@ -305,6 +337,25 @@ const useSpeech = ({ pushToast }) => {
       }
     },
     [cleanupRecorder, mediaRecordingSupported, pushToast]
+  )
+
+  const handleRecognitionError = useCallback(
+    (errorCode) => {
+      if (errorCode === 'aborted' || errorCode === 'no-speech') return
+
+      shouldResumeRecognitionRef.current = false
+      setIsListening(false)
+      setListeningTarget(null)
+      setDictationMode(null)
+
+      pushToast({
+        title: 'Voice input stopped',
+        description:
+          speechErrorDescriptions[errorCode] || 'Unable to capture your voice right now.',
+        variant: 'error',
+      })
+    },
+    [pushToast]
   )
 
   const toggleListening = useCallback(
@@ -340,24 +391,28 @@ const useSpeech = ({ pushToast }) => {
           }
 
           recognition.onerror = (event) => {
-            setIsListening(false)
-            setListeningTarget(null)
-
-            if (event.error === 'aborted') return
-
-            pushToast({
-              title: 'Voice input stopped',
-              description:
-                event.error === 'not-allowed'
-                  ? 'Microphone permission was denied.'
-                  : 'Unable to capture your voice right now.',
-              variant: 'error',
-            })
+            handleRecognitionError(event.error)
           }
 
           recognition.onend = () => {
+            if (shouldResumeRecognitionRef.current && !manualRecognitionStopRef.current) {
+              clearRecognitionRestart()
+              recognitionRestartTimeoutRef.current = window.setTimeout(() => {
+                try {
+                  recognition.start()
+                } catch {
+                  shouldResumeRecognitionRef.current = false
+                  setIsListening(false)
+                  setListeningTarget(null)
+                  setDictationMode(null)
+                }
+              }, 220)
+              return
+            }
+
             setIsListening(false)
             setListeningTarget(null)
+            setDictationMode(null)
           }
 
           recognitionRef.current = recognition
@@ -368,15 +423,21 @@ const useSpeech = ({ pushToast }) => {
         recognitionRef.current.interimResults = true
         transcriptCallbackRef.current = onTranscript
         listeningBaseRef.current = initialText.trim()
+        manualRecognitionStopRef.current = false
+        shouldResumeRecognitionRef.current = true
+        clearRecognitionRestart()
 
         try {
           recognitionRef.current.start()
           setListeningTarget(id)
           setIsListening(true)
+          setDictationMode('listening')
           return
         } catch {
           setIsListening(false)
           setListeningTarget(null)
+          setDictationMode(null)
+          shouldResumeRecognitionRef.current = false
           pushToast({
             title: 'Voice input unavailable',
             description: 'The microphone could not be started. Please try again.',
@@ -398,6 +459,8 @@ const useSpeech = ({ pushToast }) => {
       await startRecorderDictation({ id, initialText, onTranscript })
     },
     [
+      clearRecognitionRestart,
+      handleRecognitionError,
       isListening,
       listeningTarget,
       pushToast,
@@ -412,6 +475,7 @@ const useSpeech = ({ pushToast }) => {
   return {
     browserSpeechPlaybackSupported,
     capabilitiesLoading: capabilities.isLoading,
+    dictationMode,
     dictationSupported,
     isListening,
     isTranscribing,

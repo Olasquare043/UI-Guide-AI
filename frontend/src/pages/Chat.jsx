@@ -15,6 +15,8 @@ import {
 } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import MarkdownContent from '../components/MarkdownContent'
+import VoiceModeToggle from '../components/VoiceModeToggle'
+import VoiceStatus from '../components/VoiceStatus'
 import useSpeech from '../hooks/useSpeech'
 import useToast from '../hooks/useToast'
 import useLocalStorage from '../hooks/useLocalStorage'
@@ -28,7 +30,7 @@ const buildPrompt = (message, verbosity) => {
 
 const Chat = () => {
   const { pushToast } = useToast()
-  const { preferences, setVerbosity } = usePreferences()
+  const { preferences, setVerbosity, setVoiceMode } = usePreferences()
   const [chats, setChats] = useLocalStorage('ui-guide-chats', [])
   const [currentChatId, setCurrentChatId] = useState(null)
   const [input, setInput] = useState('')
@@ -38,6 +40,7 @@ const Chat = () => {
   const abortRef = useRef(null)
   const {
     capabilitiesLoading,
+    dictationMode,
     dictationSupported,
     isListening,
     isTranscribing,
@@ -61,6 +64,27 @@ const Chat = () => {
     if (!container) return
     container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' })
   }
+
+  const handleVoiceModeChange = useCallback(
+    (enabled) => {
+      setVoiceMode(enabled)
+      if (!enabled) {
+        stopPlayback()
+      }
+    },
+    [setVoiceMode, stopPlayback]
+  )
+
+  const maybeAutoSpeak = useCallback(
+    (message) => {
+      if (!preferences.voiceMode || !playbackSupported || !message?.content || message.isError) return
+      void togglePlayback({
+        id: message.createdAt,
+        text: message.content,
+      })
+    },
+    [playbackSupported, preferences.voiceMode, togglePlayback]
+  )
 
   const handleNewChat = useCallback(() => {
     const newChat = {
@@ -167,6 +191,7 @@ const Chat = () => {
             : chat
         )
       )
+      maybeAutoSpeak(assistantMessage)
     } catch (error) {
       if (!error.isCanceled) {
         const errorMessage = {
@@ -277,6 +302,18 @@ const Chat = () => {
                 {level}
               </button>
             ))}
+          </div>
+          <div className="mt-4">
+            <VoiceModeToggle
+              enabled={preferences.voiceMode}
+              onChange={handleVoiceModeChange}
+              disabled={!playbackSupported && !capabilitiesLoading}
+              description={
+                playbackSupported || capabilitiesLoading
+                  ? 'New assistant replies will start speaking automatically.'
+                  : 'Speech playback is unavailable in this browser right now.'
+              }
+            />
           </div>
         </div>
       </aside>
@@ -438,7 +475,7 @@ const Chat = () => {
               {isTranscribing && transcribingTarget === 'chat-input'
                 ? 'Transcribing...'
                 : isListening && listeningTarget === 'chat-input'
-                  ? 'Stop'
+                  ? 'Stop mic'
                   : speechRecognitionSupported
                     ? 'Speak'
                     : capabilitiesLoading
@@ -465,9 +502,27 @@ const Chat = () => {
               </button>
             )}
           </form>
+          {isListening && listeningTarget === 'chat-input' && (
+            <VoiceStatus
+              mode={dictationMode === 'recording' ? 'recording' : 'listening'}
+              title={dictationMode === 'recording' ? 'Recording your voice' : 'Listening live'}
+              description={
+                dictationMode === 'recording'
+                  ? 'Speak naturally, then tap the button again when you want us to transcribe.'
+                  : 'Keep speaking. UI Guide will keep the mic active even if you pause briefly.'
+              }
+            />
+          )}
+          {isTranscribing && transcribingTarget === 'chat-input' && (
+            <VoiceStatus
+              mode="transcribing"
+              title="Turning speech into text"
+              description="Hold on while we transcribe your latest recording."
+            />
+          )}
           <p className="text-xs text-slate-500">
-            Use the mic to dictate questions. If live dictation is unavailable, UI Guide records
-            first and transcribes after you stop.
+            Use the mic to dictate questions. Voice mode auto-speaks fresh answers, and if live
+            dictation is unavailable UI Guide records first and transcribes after you stop.
           </p>
         </div>
       </section>

@@ -7,7 +7,7 @@ Highlights:
 - Guided and free-form chat experiences
 - Official-document retrieval with citations
 - Adjustable response verbosity
-- Browser-native voice input and read-aloud support in chat
+- Voice dictation, animated listening states, and auto-read voice mode across chat and guided walkthroughs
 
 ## Stack
 
@@ -155,6 +155,7 @@ Backend:
 - This repo currently bundles `backend/chroma_db` because the dataset is small and mostly static. For larger or frequently updated datasets, prefer persistent storage or a release asset instead of committing the vector store.
 - Configure `OPENAI_API_KEY` and `ALLOWED_ORIGINS` in your hosting provider.
 - Server-side speech fallback uses `OPENAI_API_KEY` for transcription and TTS. Without it, browser-native voice still works on supported browsers.
+- Voice mode is stored locally in the browser, so users can keep auto-read enabled between sessions.
 - The frontend now checks backend capabilities before enabling server speech fallback, so `GET /capabilities` should be available anywhere you deploy the API.
 - For frontend hosting (Vercel, Netlify), set `VITE_API_URL` to your API URL.
 - If `OPENAI_API_KEY` is missing, the backend will use Groq for chat (if set) and local embeddings.

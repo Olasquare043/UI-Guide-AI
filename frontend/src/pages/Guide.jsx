@@ -20,6 +20,8 @@ import { useForm } from 'react-hook-form'
 import FormField from '../components/FormField'
 import MarkdownContent from '../components/MarkdownContent'
 import Stepper from '../components/Stepper'
+import VoiceModeToggle from '../components/VoiceModeToggle'
+import VoiceStatus from '../components/VoiceStatus'
 import useSpeech from '../hooks/useSpeech'
 import useToast from '../hooks/useToast'
 import useLocalStorage from '../hooks/useLocalStorage'
@@ -44,7 +46,7 @@ const MAX_UPLOAD_CHARS = 4000
 
 const Guide = () => {
   const { pushToast } = useToast()
-  const { preferences, setVerbosity } = usePreferences()
+  const { preferences, setVerbosity, setVoiceMode } = usePreferences()
   const [, setGuides] = useLocalStorage('ui-guide-guides', [])
   const [currentStep, setCurrentStep] = useState(0)
   const [result, setResult] = useState(null)
@@ -56,6 +58,7 @@ const Guide = () => {
   const abortRef = useRef(null)
   const {
     capabilitiesLoading,
+    dictationMode,
     dictationSupported,
     isListening,
     isTranscribing,
@@ -105,6 +108,13 @@ const Guide = () => {
   }, [watchedVerbosity, setVerbosity])
 
   const summary = useMemo(() => result?.parsed?.summary || '', [result])
+
+  const handleVoiceModeChange = (enabled) => {
+    setVoiceMode(enabled)
+    if (!enabled) {
+      stopPlayback()
+    }
+  }
 
   const handleFileUpload = (event) => {
     const file = event.target.files?.[0]
@@ -171,6 +181,12 @@ const Guide = () => {
       setGuides((prev) => [entry, ...prev].slice(0, 25))
       setResult(entry)
       setCurrentStep(3)
+      if (preferences.voiceMode && playbackSupported) {
+        void togglePlayback({
+          id: entry.id,
+          text: entry.response,
+        })
+      }
       pushToast({
         title: 'Guidance ready',
         description: 'Your walkthrough has been generated.',
@@ -239,45 +255,66 @@ const Guide = () => {
   }
 
   const renderDictationButton = (fieldId, value) => (
-    <button
-      type="button"
-      onClick={() =>
-        toggleListening({
-          id: fieldId,
-          initialText: value || '',
-          onTranscript: (nextValue) =>
-            setValue(fieldId, nextValue, {
-              shouldDirty: true,
-              shouldTouch: true,
-            }),
-        })
-      }
-      disabled={
-        isLoading ||
-        isTranscribing ||
-        ((!dictationSupported && !capabilitiesLoading) || (isListening && listeningTarget !== fieldId))
-      }
-      className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold ${
-        isListening && listeningTarget === fieldId
-          ? 'border-amber-200 bg-amber-50 text-amber-700'
-          : 'border-slate-200 bg-white text-slate-600 hover:border-[var(--ui-brand)] hover:text-[var(--ui-brand)]'
-      } disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-50 disabled:text-slate-300`}
-    >
-      {isListening && listeningTarget === fieldId ? (
-        <MicOff className="h-3.5 w-3.5" />
-      ) : (
-        <Mic className="h-3.5 w-3.5" />
+    <div className="space-y-3">
+      <button
+        type="button"
+        onClick={() =>
+          toggleListening({
+            id: fieldId,
+            initialText: value || '',
+            onTranscript: (nextValue) =>
+              setValue(fieldId, nextValue, {
+                shouldDirty: true,
+                shouldTouch: true,
+              }),
+          })
+        }
+        disabled={
+          isLoading ||
+          isTranscribing ||
+          ((!dictationSupported && !capabilitiesLoading) ||
+            (isListening && listeningTarget !== fieldId))
+        }
+        className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-semibold ${
+          isListening && listeningTarget === fieldId
+            ? 'border-amber-200 bg-amber-50 text-amber-700'
+            : 'border-slate-200 bg-white text-slate-600 hover:border-[var(--ui-brand)] hover:text-[var(--ui-brand)]'
+        } disabled:cursor-not-allowed disabled:border-slate-100 disabled:bg-slate-50 disabled:text-slate-300`}
+      >
+        {isListening && listeningTarget === fieldId ? (
+          <MicOff className="h-3.5 w-3.5" />
+        ) : (
+          <Mic className="h-3.5 w-3.5" />
+        )}
+        {isTranscribing && transcribingTarget === fieldId
+          ? 'Transcribing...'
+          : isListening && listeningTarget === fieldId
+            ? 'Stop mic'
+            : speechRecognitionSupported
+              ? 'Dictate'
+              : capabilitiesLoading
+                ? 'Checking...'
+                : 'Record'}
+      </button>
+      {isListening && listeningTarget === fieldId && (
+        <VoiceStatus
+          mode={dictationMode === 'recording' ? 'recording' : 'listening'}
+          title={dictationMode === 'recording' ? 'Recording your notes' : 'Listening live'}
+          description={
+            dictationMode === 'recording'
+              ? 'Speak naturally, then tap the mic again when you want us to transcribe.'
+              : 'Keep speaking. UI Guide will stay ready even if you pause briefly.'
+          }
+        />
       )}
-      {isTranscribing && transcribingTarget === fieldId
-        ? 'Transcribing...'
-        : isListening && listeningTarget === fieldId
-          ? 'Stop'
-          : speechRecognitionSupported
-            ? 'Dictate'
-            : capabilitiesLoading
-              ? 'Checking...'
-              : 'Record'}
-    </button>
+      {isTranscribing && transcribingTarget === fieldId && (
+        <VoiceStatus
+          mode="transcribing"
+          title="Transcribing your notes"
+          description="We are turning the recorded audio into editable text."
+        />
+      )}
+    </div>
   )
 
   const steps = result?.parsed?.steps || []
@@ -416,6 +453,17 @@ const Guide = () => {
             </div>
           </div>
 
+          <VoiceModeToggle
+            enabled={preferences.voiceMode}
+            onChange={handleVoiceModeChange}
+            disabled={!playbackSupported && !capabilitiesLoading}
+            description={
+              playbackSupported || capabilitiesLoading
+                ? 'When guidance is ready, UI Guide will read it aloud automatically.'
+                : 'Speech playback is unavailable in this browser right now.'
+            }
+          />
+
           <div className="flex flex-wrap gap-3">
             <button
               type="submit"
@@ -437,8 +485,9 @@ const Guide = () => {
             )}
           </div>
           <p className="text-xs text-slate-500">
-            Voice input works best in Chromium browsers. When live dictation is unavailable, the
-            app records briefly and transcribes after you stop.
+            Voice input works best in Chromium browsers. Voice mode auto-speaks finished guidance,
+            and when live dictation is unavailable the app records briefly and transcribes after
+            you stop.
           </p>
         </form>
 
